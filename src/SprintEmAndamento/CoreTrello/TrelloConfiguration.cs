@@ -3,10 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reactive;
-using System.Reactive.Joins;
-using System.Reactive.Linq;
-using System.Reflection;
 using System.Threading;
 using DialectSoftware.Web.HtmlAgilityPack;
 using mshtml;
@@ -23,14 +19,19 @@ namespace CoreSprint.CoreTrello
 
         public static void Configure()
         {
+            Console.WriteLine("Configurando integração com Trello...");
+
             const string urlAppKey = "https://trello.com/app-key";
             Process.Start("iexplore", urlAppKey);
             var shellWindows = new ShellWindows();
+            var htmlDocument = new HtmlDocument();
             var ie = GetInternetExplorerInstance(shellWindows, urlAppKey);
             var autoResetEvent = new AutoResetEvent(false);
-            var htmlDocument = new HtmlDocument();
 
-            ie.NavigateComplete2 += (object disp, ref object url) => { autoResetEvent.Set(); };
+            ie.NavigateComplete2 += (object disp, ref object url) =>
+            {
+                autoResetEvent.Set();
+            };
             
             var appKey = GetAppKey(ie, urlAppKey, autoResetEvent, htmlDocument);
             var trello = new Trello(appKey);
@@ -38,6 +39,7 @@ namespace CoreSprint.CoreTrello
             var userToken = GetUserToken(ie, urlUserToken, autoResetEvent, htmlDocument);
 
             ie.Quit();
+            
             File.WriteAllLines(_trelloConfig, new List<string> { appKey, userToken });
             Console.WriteLine("\r\nConfiguração do Trello finalizada!");
         }
@@ -78,11 +80,11 @@ namespace CoreSprint.CoreTrello
             return false;
         }
 
-        private static InternetExplorer GetInternetExplorerInstance(ShellWindows shellWindows, string urlAppKey)
+        private static InternetExplorer GetInternetExplorerInstance(ShellWindows shellWindows, string url)
         {
-            var ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL == urlAppKey);
+            var ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL == url);
             while (ie == null)
-                ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL == urlAppKey);
+                ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL == url);
             return ie;
         }
 
@@ -146,12 +148,12 @@ namespace CoreSprint.CoreTrello
             ie.Navigate2(urlUserToken.ToString());
             autoResetEvent.WaitOne();
             autoResetEvent.WaitOne();
-            Console.WriteLine(ie.LocationURL);
+
             do
                 htmlDocument.LoadHtml(document.documentElement.innerHTML);
             while (document.readyState != "complete");
-            var userToken = htmlDocument.DocumentNode.SelectSingleNode("//pre").InnerText.Trim();
-            return userToken;
+
+            return htmlDocument.DocumentNode.SelectSingleNode("//pre").InnerText.Trim();
         }
     }
 }

@@ -31,6 +31,7 @@ namespace CoreSprint
             Console.WriteLine();
             if (!SpreadsheetConfiguration.HasConfiguration())
                 SpreadsheetConfiguration.Configure();
+            Console.WriteLine();
         }
 
         private static void TestTrello(SprintFactory sprintFactory)

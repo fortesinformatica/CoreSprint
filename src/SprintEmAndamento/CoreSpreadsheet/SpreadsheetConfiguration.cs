@@ -2,8 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using DialectSoftware.Web.HtmlAgilityPack;
 using Google.GData.Client;
 using Google.GData.Spreadsheets;
+using mshtml;
+using SHDocVw;
 
 namespace CoreSprint.CoreSpreadsheet
 {
@@ -18,6 +23,8 @@ namespace CoreSprint.CoreSpreadsheet
 
         public static void Configure()
         {
+            Console.WriteLine("Configurando integração com Google Planilhas...");
+
             ClientId = "1067851659930-r4gdvb352t81tu35anuj070dhul9s69v.apps.googleusercontent.com";
             ClientSecret = "fQaBk3kjpRBKXt2WjJHJkxkE";
             Scope = "https://spreadsheets.google.com/feeds https://docs.google.com/feeds";
@@ -25,19 +32,55 @@ namespace CoreSprint.CoreSpreadsheet
 
             var parameters = GetParameters();
 
-            //Getting token...
             var authorizationUrl = OAuthUtil.CreateOAuth2AuthorizationUrl(parameters);
-            Console.WriteLine(authorizationUrl);
-            Process.Start(authorizationUrl);
-            Console.WriteLine("\r\nAcesse a URL acima para recuperar sua chave de acesso para as Planilhas do Google.");
-            Console.Write("\r\nInsira o código de acesso gerado na URL aqui: ");
-            parameters.AccessCode = Console.ReadLine();
-
+            parameters.AccessCode = GetAccessCode(authorizationUrl);
             OAuthUtil.GetAccessToken(parameters);
-            
-            File.WriteAllLines(_trelloConfig, new List<string> { parameters.AccessToken, parameters.RefreshToken });
 
+            File.WriteAllLines(_trelloConfig, new List<string> { parameters.AccessToken, parameters.RefreshToken });
             Console.WriteLine("\r\nConfiguração do Google Planilhas finalizada!");
+        }
+
+        private static string GetAccessCode(string authorizationUrl)
+        {
+            var accessCode = RetrieveAccessCode(authorizationUrl);
+
+            if (string.IsNullOrWhiteSpace(accessCode))
+            {
+                Console.WriteLine(authorizationUrl);
+                Process.Start(authorizationUrl);
+                Console.WriteLine(
+                    "\r\nAcesse a URL acima para recuperar sua chave de acesso para as Planilhas do Google.");
+                Console.Write("\r\nInsira o código de acesso gerado na URL aqui: ");
+
+                accessCode = Console.ReadLine();
+            }
+            return accessCode;
+        }
+
+        private static string RetrieveAccessCode(string authorizationUrl)
+        {
+            Process.Start("iexplore", authorizationUrl);
+            string appKey = null;
+            var shellWindows = new ShellWindows();
+            var htmlDocument = new HtmlDocument();
+            var ie = GetInternetExplorerInstance(shellWindows);
+
+            var document = ie.Document as HTMLDocument;
+
+            if (document != null)
+            {
+                HtmlNode elementById = null;
+                while (document.readyState != "complete" || elementById == null || !ie.LocationURL.Contains("accounts.google.com/o/oauth2/approval"))
+                {
+                    htmlDocument.LoadHtml(document.documentElement.innerHTML);
+                    elementById = htmlDocument.GetElementById("code");
+                    Thread.Sleep(500);
+                }
+                appKey = elementById.Attributes["value"].Value;
+            }
+
+            ie.Quit();
+            return appKey;
         }
 
         public static Dictionary<string, string> GetConfiguration()
@@ -97,6 +140,14 @@ namespace CoreSprint.CoreSpreadsheet
                 RedirectUri = RedirectUri,
                 Scope = Scope
             };
+        }
+
+        private static InternetExplorer GetInternetExplorerInstance(ShellWindows shellWindows)
+        {
+            var ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL.Contains("accounts.google.com/o/oauth2"));
+            while (ie == null)
+                ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL.Contains("accounts.google.com/o/oauth2"));
+            return ie;
         }
     }
 }
