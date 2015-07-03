@@ -24,7 +24,7 @@ namespace CoreSprint.CoreTrello
         public static void Configure()
         {
             const string urlAppKey = "https://trello.com/app-key";
-            Process.Start(urlAppKey);
+            Process.Start("iexplore", urlAppKey);
             var shellWindows = new ShellWindows();
             var ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL == urlAppKey);
             while (ie == null)
@@ -32,7 +32,10 @@ namespace CoreSprint.CoreTrello
             string appKey = null, userToken = null;
             var document = ie.Document as HTMLDocument;
             var autoResetEvent = new AutoResetEvent(false);
-            ie.DocumentComplete += (object disp, ref object url) => autoResetEvent.Set();
+            ie.NavigateComplete2 += (object disp, ref object url) =>
+            {
+                autoResetEvent.Set();
+            };
             var htmlDocument = new HtmlDocument();
             if (document != null)
             {
@@ -45,9 +48,9 @@ namespace CoreSprint.CoreTrello
                     autoResetEvent.WaitOne();
                     ie.Navigate(urlAppKey);
                     autoResetEvent.WaitOne();
-                    autoResetEvent.WaitOne();
+                    //autoResetEvent.WaitOne();
                 }
-                while (document.readyState != "complete")
+                while (document.readyState != "complete" || elementById == null)
                 {
                     htmlDocument.LoadHtml(document.documentElement.innerHTML);
                     elementById = htmlDocument.GetElementById("key");
@@ -65,12 +68,13 @@ namespace CoreSprint.CoreTrello
             autoResetEvent.WaitOne();
             autoResetEvent.WaitOne();
             Console.WriteLine(ie.LocationURL);
-            autoResetEvent.WaitOne();
-            Console.WriteLine(ie.LocationURL);
+            //autoResetEvent.WaitOne();
             do
                 htmlDocument.LoadHtml(document.documentElement.innerHTML);
             while (document.readyState != "complete");
             userToken = htmlDocument.DocumentNode.SelectSingleNode("//pre").InnerText.Trim();
+
+            ie.Quit();
 
             Console.WriteLine("\r\n{0}", urlUserToken);
             Console.WriteLine("\r\nAgora acesse a URL acima para gerar seu token de acesso aos quadros privados do Trello.");
