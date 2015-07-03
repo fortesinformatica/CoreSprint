@@ -2,6 +2,15 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reactive;
+using System.Reactive.Joins;
+using System.Reactive.Linq;
+using System.Reflection;
+using System.Threading;
+using DialectSoftware.Web.HtmlAgilityPack;
+using mshtml;
+using SHDocVw;
 using TrelloNet;
 
 namespace CoreSprint.CoreTrello
@@ -9,22 +18,65 @@ namespace CoreSprint.CoreTrello
     public static class TrelloConfiguration
     {
         private static string _trelloConfig = "c:\\temp\\trello.config";
+        private static bool navigated = false;
+
 
         public static void Configure()
         {
-            var urlAppKey = "https://trello.com/app-key";
+            const string urlAppKey = "https://trello.com/app-key";
             Process.Start(urlAppKey);
+            var shellWindows = new ShellWindows();
+            var ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL == urlAppKey);
+            while (ie == null)
+                ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL == urlAppKey);
+            string appKey = null, userToken = null;
+            var document = ie.Document as HTMLDocument;
+            var autoResetEvent = new AutoResetEvent(false);
+            ie.DocumentComplete += (object disp, ref object url) => autoResetEvent.Set();
+            var htmlDocument = new HtmlDocument();
+            if (document != null)
+            {
+                htmlDocument.LoadHtml(document.documentElement.innerHTML);
+                var elementById = htmlDocument.GetElementById("key");
+                if (elementById == null)
+                {
+                    ie.Navigate("https://trello.com/login");
+                    autoResetEvent.WaitOne();
+                    autoResetEvent.WaitOne();
+                    ie.Navigate(urlAppKey);
+                    autoResetEvent.WaitOne();
+                    autoResetEvent.WaitOne();
+                }
+                while (document.readyState != "complete")
+                {
+                    htmlDocument.LoadHtml(document.documentElement.innerHTML);
+                    elementById = htmlDocument.GetElementById("key");
+                }
+                appKey = elementById.Attributes["value"].Value;
+            }
             Console.Write("Acesse {0} e insira a sua chave de desenvolvedor: ", urlAppKey);
-            var appKey = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(appKey))
+                appKey = Console.ReadLine();
 
             var trello = new Trello(appKey);
             var urlUserToken = trello.GetAuthorizationUrl(Constants.TrelloAppName, Scope.ReadOnly, Expiration.Never);
 
-            Process.Start(urlUserToken.ToString());
+            ie.Navigate2(urlUserToken.ToString());
+            autoResetEvent.WaitOne();
+            autoResetEvent.WaitOne();
+            Console.WriteLine(ie.LocationURL);
+            autoResetEvent.WaitOne();
+            Console.WriteLine(ie.LocationURL);
+            do
+                htmlDocument.LoadHtml(document.documentElement.innerHTML);
+            while (document.readyState != "complete");
+            userToken = htmlDocument.DocumentNode.SelectSingleNode("//pre").InnerText.Trim();
+
             Console.WriteLine("\r\n{0}", urlUserToken);
             Console.WriteLine("\r\nAgora acesse a URL acima para gerar seu token de acesso aos quadros privados do Trello.");
             Console.Write("\r\nInforme aqui o token gerado pela URL: ");
-            var userToken = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(userToken))
+                userToken = Console.ReadLine();
 
             File.WriteAllLines(_trelloConfig, new List<string> { appKey, userToken });
 
