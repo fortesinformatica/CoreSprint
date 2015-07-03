@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreSprint", "SprintEmAndamento\CoreSprint.csproj", "{2993CFE4-F0B4-4438-A2E7-75346BB55BC3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreSprint", "src\SprintEmAndamento\CoreSprint.csproj", "{2993CFE4-F0B4-4438-A2E7-75346BB55BC3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
