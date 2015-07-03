@@ -3,7 +3,7 @@ using Google.GData.Spreadsheets;
 
 namespace CoreSprint.CoreSpreadsheet
 {
-    public class SpreadsheetConnection
+    public class SpreadsheetConnection : ISpreadsheetConnection
     {
         public SpreadsheetsService SpreadsheetService { get; private set; }
 

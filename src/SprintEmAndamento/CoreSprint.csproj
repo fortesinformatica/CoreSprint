@@ -82,17 +82,25 @@
     <Compile Include="BrowserInstrumentation\BrowserStep.cs" />
     <Compile Include="BrowserInstrumentation\IBrowserDataRetriever.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="CoreSpreadsheet\ISpreadsheetConnection.cs" />
+    <Compile Include="CoreSpreadsheet\ISpreadsheetFacade.cs" />
+    <Compile Include="CoreTrello\ITrelloConnection.cs" />
+    <Compile Include="CoreTrello\ITrelloFacade.cs" />
+    <Compile Include="Helpers\CardHelper.cs" />
+    <Compile Include="Helpers\ICardHelper.cs" />
+    <Compile Include="ICoreSprintFactory.cs" />
+    <Compile Include="Integration\CurrentSprint.cs" />
     <Compile Include="Integration\ICommand.cs" />
     <Compile Include="Integration\ListSprintCards.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CoreSpreadsheet\SpreadsheetConfiguration.cs" />
     <Compile Include="CoreSpreadsheet\SpreadsheetConnection.cs" />
-    <Compile Include="CoreSpreadsheet\SpreadsheetSprint.cs" />
+    <Compile Include="CoreSpreadsheet\SpreadsheetFacade.cs" />
     <Compile Include="CoreTrello\TrelloConfiguration.cs" />
-    <Compile Include="CoreTrello\TrelloSprint.cs" />
+    <Compile Include="CoreTrello\TrelloFacade.cs" />
     <Compile Include="CoreTrello\TrelloConnection.cs" />
-    <Compile Include="SprintFactory.cs" />
+    <Compile Include="CoreSprintFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

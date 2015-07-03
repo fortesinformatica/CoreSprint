@@ -2,7 +2,7 @@
 
 namespace CoreSprint.CoreTrello
 {
-    public class TrelloConnection
+    public class TrelloConnection : ITrelloConnection
     {
         public ITrello Trello { get; private set; }
 
@@ -21,7 +21,7 @@ namespace CoreSprint.CoreTrello
         {
             //TODO: tratar caso de appKey ou userToken inválido
 
-            Trello = Trello ?? new TrelloNet.Trello(appKey);
+            Trello = Trello ?? new Trello(appKey);
             Trello.Authorize(userToken);
         }
     }

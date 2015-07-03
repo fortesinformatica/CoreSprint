@@ -5,11 +5,11 @@ using Google.GData.Spreadsheets;
 
 namespace CoreSprint.CoreSpreadsheet
 {
-    public class SpreadsheetSprint
+    public class SpreadsheetFacade : ISpreadsheetFacade
     {
-        private readonly SpreadsheetConnection _connection;
+        private readonly ISpreadsheetConnection _connection;
 
-        public SpreadsheetSprint(SpreadsheetConnection connection)
+        public SpreadsheetFacade(ISpreadsheetConnection connection)
         {
             _connection = connection;
         }

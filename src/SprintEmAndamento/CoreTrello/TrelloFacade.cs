@@ -3,11 +3,11 @@ using TrelloNet;
 
 namespace CoreSprint.CoreTrello
 {
-    public class TrelloSprint
+    public class TrelloFacade : ITrelloFacade
     {
-        private readonly TrelloConnection _connection;
+        private readonly ITrelloConnection _connection;
 
-        public TrelloSprint(TrelloConnection connection)
+        public TrelloFacade(ITrelloConnection connection)
         {
             _connection = connection;
         }
