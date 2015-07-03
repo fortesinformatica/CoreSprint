@@ -17,7 +17,7 @@ namespace CoreSprint.CoreTrello
 
         public static void Configure()
         {
-			Console.WriteLine("Configurando integração com Trello...");
+            Console.WriteLine("Configurando integração com Trello...");
             string appKey, userToken;
             using (var browser = new BrowserDataRetriever(DataGetter))
             {
