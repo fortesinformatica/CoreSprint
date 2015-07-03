@@ -94,6 +94,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BrowserInstrumentation\BrowserDataRetriever.cs" />
+    <Compile Include="BrowserInstrumentation\BrowserStep.cs" />
+    <Compile Include="BrowserInstrumentation\IBrowserDataRetriever.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Integration\ICommand.cs" />
     <Compile Include="Integration\ListSprintCards.cs" />

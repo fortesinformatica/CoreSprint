@@ -1,47 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Threading;
+using CoreSprint.BrowserInstrumentation;
 using DialectSoftware.Web.HtmlAgilityPack;
-using mshtml;
-using SHDocVw;
 using TrelloNet;
 
 namespace CoreSprint.CoreTrello
 {
     public static class TrelloConfiguration
     {
+        private const string TRELLO_APP_KEY_URL = "https://trello.com/app-key";
+        private const string TRELLO_LOGIN_URL = "https://trello.com/login";
         private static string _trelloConfig = "c:\\temp\\trello.config";
         private static bool navigated = false;
 
 
         public static void Configure()
         {
-            Console.WriteLine("Configurando integração com Trello...");
-
-            const string urlAppKey = "https://trello.com/app-key";
-            Process.Start("iexplore", urlAppKey);
-            var shellWindows = new ShellWindows();
-            var htmlDocument = new HtmlDocument();
-            var ie = GetInternetExplorerInstance(shellWindows, urlAppKey);
-            var autoResetEvent = new AutoResetEvent(false);
-
-            ie.NavigateComplete2 += (object disp, ref object url) =>
+			Console.WriteLine("Configurando integração com Trello...");
+            string appKey, userToken;
+            using (var browser = new BrowserDataRetriever(DataGetter))
             {
-                autoResetEvent.Set();
-            };
-            
-            var appKey = GetAppKey(ie, urlAppKey, autoResetEvent, htmlDocument);
-            var trello = new Trello(appKey);
-            var urlUserToken = trello.GetAuthorizationUrl(Constants.TrelloAppName, Scope.ReadOnly, Expiration.Never);
-            var userToken = GetUserToken(ie, urlUserToken, autoResetEvent, htmlDocument);
+                appKey = GetAppKey(browser);
 
-            ie.Quit();
-            
+                var trello = new Trello(appKey);
+                var urlUserToken = trello.GetAuthorizationUrl(Constants.TrelloAppName, Scope.ReadOnly, Expiration.Never);
+
+                userToken = GetUserToken(browser, urlUserToken);
+            }
+
             File.WriteAllLines(_trelloConfig, new List<string> { appKey, userToken });
             Console.WriteLine("\r\nConfiguração do Trello finalizada!");
+        }
+
+        private static string DataGetter(HtmlDocument document)
+        {
+            var elementById = document.GetElementById("key");
+            return elementById != null ? elementById.Attributes["value"].Value : null;
         }
 
         public static Dictionary<string, string> GetConfiguration()
@@ -80,56 +75,31 @@ namespace CoreSprint.CoreTrello
             return false;
         }
 
-        private static InternetExplorer GetInternetExplorerInstance(ShellWindows shellWindows, string url)
+        private static string GetAppKey(IBrowserDataRetriever browser)
         {
-            var ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL == url);
-            while (ie == null)
-                ie = shellWindows.OfType<InternetExplorer>().FirstOrDefault(ieInstance => ieInstance.LocationURL == url);
-            return ie;
-        }
+            browser.AddStep(TRELLO_APP_KEY_URL);
+            browser.AddStep(TRELLO_LOGIN_URL);
+            browser.AddStep(null, false);
+            browser.AddStep(TRELLO_APP_KEY_URL);
 
-        private static string GetAppKey(InternetExplorer ie, string urlAppKey, AutoResetEvent autoResetEvent,
-            HtmlDocument htmlDocument)
-        {
-            var appKey = RetrieveAppKey(ie, urlAppKey, autoResetEvent, htmlDocument);
+            var appKey = browser.Retrieve();
+
             if (string.IsNullOrWhiteSpace(appKey))
             {
-                Console.Write("Acesse {0} e insira a sua chave de desenvolvedor: ", urlAppKey);
+                Console.Write("Acesse {0} e insira a sua chave de desenvolvedor: ", TRELLO_APP_KEY_URL);
                 appKey = Console.ReadLine();
             }
             return appKey;
         }
 
-        private static string RetrieveAppKey(IWebBrowser2 ie, string urlAppKey, WaitHandle autoResetEvent, HtmlDocument htmlDocument)
+        private static string GetUserToken(IBrowserDataRetriever browser, Uri urlUserToken)
         {
-            string appKey = null;
-            var document = ie.Document as HTMLDocument;
-            if (document != null)
-            {
-                htmlDocument.LoadHtml(document.documentElement.innerHTML);
-                var elementById = htmlDocument.GetElementById("key");
-                if (elementById == null)
-                {
-                    ie.Navigate("https://trello.com/login");
-                    autoResetEvent.WaitOne();
-                    autoResetEvent.WaitOne();
-                    ie.Navigate(urlAppKey);
-                    autoResetEvent.WaitOne();
-                }
-                while (document.readyState != "complete" || elementById == null)
-                {
-                    htmlDocument.LoadHtml(document.documentElement.innerHTML);
-                    elementById = htmlDocument.GetElementById("key");
-                }
-                appKey = elementById.Attributes["value"].Value;
-            }
-            return appKey;
-        }
+            browser.ClearSteps();
+            browser.WithDataGetter(UserTokenGetter)
+                .AddStep(urlUserToken.ToString())
+                .AddStep(null);
 
-        private static string GetUserToken(InternetExplorer ie, Uri urlUserToken, AutoResetEvent autoResetEvent,
-            HtmlDocument htmlDocument)
-        {
-            var userToken = RetrieveUserToken(ie, urlUserToken, autoResetEvent, htmlDocument);
+            var userToken = browser.Retrieve();
 
             if (string.IsNullOrWhiteSpace(userToken))
             {
@@ -141,19 +111,10 @@ namespace CoreSprint.CoreTrello
             return userToken;
         }
 
-        private static string RetrieveUserToken(InternetExplorer ie, Uri urlUserToken, AutoResetEvent autoResetEvent,
-            HtmlDocument htmlDocument)
+        private static string UserTokenGetter(HtmlDocument document)
         {
-            var document = ie.Document as HTMLDocument;
-            ie.Navigate2(urlUserToken.ToString());
-            autoResetEvent.WaitOne();
-            autoResetEvent.WaitOne();
-
-            do
-                htmlDocument.LoadHtml(document.documentElement.innerHTML);
-            while (document.readyState != "complete");
-
-            return htmlDocument.DocumentNode.SelectSingleNode("//pre").InnerText.Trim();
+            var node = document.DocumentNode.SelectSingleNode("//pre");
+            return node == null ? null : node.InnerText.Trim();
         }
     }
 }
