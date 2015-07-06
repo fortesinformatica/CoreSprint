@@ -67,9 +67,7 @@ namespace CoreSprint.CoreSpreadsheet
 
         public void CreateHeader(WorksheetEntry worksheet, IList<string> cellHeaders)
         {
-            //TODO: receber parâmetros com a lista de células
-            var cellQuery = new CellQuery(worksheet.CellFeedLink);
-            var cellFeed = _connection.SpreadsheetService.Query(cellQuery);
+            var cellFeed = GetCellFeed(worksheet);
 
             for (var i = 0; i < cellHeaders.Count; i++)
             {
@@ -80,11 +78,55 @@ namespace CoreSprint.CoreSpreadsheet
 
         public void InsertInWorksheet(WorksheetEntry worksheet, ListEntry row)
         {
+            var listFeed = GetListFeed(worksheet);
+            _connection.SpreadsheetService.Insert(listFeed, row);
+        }
+
+        public string GetCellValue(WorksheetEntry worksheet, uint row, uint col)
+        {
+            var cellEntry = GetCellValue(worksheet, row, row, col, col).FirstOrDefault();
+            return cellEntry != null ? cellEntry.Value : "";
+        }
+
+        public IEnumerable<CellEntry> GetCellValue(WorksheetEntry worksheet, uint minrow, uint maxrow, uint mincol, uint maxcol)
+        {
+            var cellQuery = new CellQuery(worksheet.CellFeedLink)
+            {
+                MinimumColumn = mincol,
+                MaximumColumn = maxcol,
+                MinimumRow = minrow,
+                MaximumRow = maxrow
+            };
+
+            var cellFeed = GetCellFeed(cellQuery);
+            return cellFeed.Entries.OfType<CellEntry>();
+        }
+
+        public void SaveToCell(WorksheetEntry worksheet, uint row, uint col, string value)
+        {
+            var cellFeed = GetCellFeed(worksheet);
+            var cellEntry = new CellEntry(row, col, value);
+            cellFeed.Insert(cellEntry);
+        }
+
+        private CellFeed GetCellFeed(CellQuery cellQuery)
+        {
+            return _connection.SpreadsheetService.Query(cellQuery);
+        }
+
+        private ListFeed GetListFeed(WorksheetEntry worksheet)
+        {
             var listFeedLink = worksheet.Links.FindService(GDataSpreadsheetsNameTable.ListRel, null);
             var listQuery = new ListQuery(listFeedLink.HRef.ToString());
             var listFeed = _connection.SpreadsheetService.Query(listQuery);
+            return listFeed;
+        }
 
-            _connection.SpreadsheetService.Insert(listFeed, row);
+        private CellFeed GetCellFeed(WorksheetEntry worksheet)
+        {
+            var cellQuery = new CellQuery(worksheet.CellFeedLink);
+            var cellFeed = _connection.SpreadsheetService.Query(cellQuery);
+            return cellFeed;
         }
     }
 }

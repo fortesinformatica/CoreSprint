@@ -10,6 +10,7 @@ namespace CoreSprint.CoreTrello
         Board GetBoard(string boardId);
         IEnumerable<Action> GetActions(Card card, ActionType[] actionTypes);
         List GetList(Card card);
+        IEnumerable<Member> GetMembers(Board board);
         IEnumerable<Member> GetMembers(Card card);
     }
 }

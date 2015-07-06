@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using CoreSprint.CoreSpreadsheet;
 using CoreSprint.CoreTrello;
 using CoreSprint.Helpers;
@@ -17,7 +16,8 @@ namespace CoreSprint.Integration
         private readonly string _spreadsheetId;
         private readonly ITrelloFacade _trelloFacade;
         private readonly ISpreadsheetFacade _spreadsheetFacade;
-        private ICardHelper _cardHelper;
+        private readonly ICardHelper _cardHelper;
+        private readonly IWorksheetHelper _worksheetHelper;
 
         public ListSprintCards(ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
         {
@@ -26,52 +26,30 @@ namespace CoreSprint.Integration
             _trelloFacade = coreSprintFactory.GetTrelloFacade();
             _spreadsheetFacade = coreSprintFactory.GetSpreadsheetFacade();
             _cardHelper = coreSprintFactory.GetCardHelper();
+            _worksheetHelper = coreSprintFactory.GetWorksheetHelper();
         }
 
         public void Execute()
         {
             const string worksheetName = "ListaDeCartoes";
-            var worksheet = RedoWorksheet(worksheetName);
+            var worksheet = _worksheetHelper.RedoWorksheet(_spreadsheetId, worksheetName, GetHeadersName());
             CopyCardsToSpreadsheet(worksheet);
         }
 
         private void CopyCardsToSpreadsheet(WorksheetEntry worksheet)
         {
-            var cards = _trelloFacade.GetCards(_trelloBoardId);
+            var cards = _trelloFacade.GetCards(_trelloBoardId).ToList();
+            var i = 0;
+            var count = cards.Count();
             foreach (var card in cards)
             {
-                Console.WriteLine("Inserindo cartão: {0}", card.Name);
+                Console.WriteLine("Inserindo cartão ({0}/{1}): {2}", ++i, count, card.Name);
 
                 var row = MountWorksheetRow(card);
 
                 //TODO: substituir para inserir em lote
                 _spreadsheetFacade.InsertInWorksheet(worksheet, row);
             }
-        }
-
-        private WorksheetEntry RedoWorksheet(string worksheetName)
-        {
-            Console.WriteLine("Recriando aba {0}...", worksheetName);
-
-            var spreadsheet = _spreadsheetFacade.GetSpreadsheet(_spreadsheetId);
-            var createdTempWorksheet = false;
-            var cellHeaders = GetHeadersName();
-
-            if (spreadsheet.Worksheets.Entries.Count <= 1)
-            {
-                _spreadsheetFacade.CreateWorksheet(spreadsheet, "Temp", 1, 1);
-                createdTempWorksheet = true;
-            }
-
-            _spreadsheetFacade.DeleteWorksheet(spreadsheet, worksheetName); //TODO: fazer backup
-            _spreadsheetFacade.CreateWorksheet(spreadsheet, worksheetName, 1, (uint)cellHeaders.Count);
-
-            if (createdTempWorksheet)
-                _spreadsheetFacade.DeleteWorksheet(spreadsheet, "Temp");
-
-            var worksheet = _spreadsheetFacade.GetWorksheet(spreadsheet, worksheetName);
-            _spreadsheetFacade.CreateHeader(worksheet, cellHeaders);
-            return worksheet;
         }
 
         private static List<string> GetHeadersName()

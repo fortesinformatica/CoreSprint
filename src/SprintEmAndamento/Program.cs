@@ -18,6 +18,7 @@ namespace CoreSprint
             var sprintFactory = new CoreSprintFactory();
             var commandList = new List<ICommand>
             {
+                new CurrentSprint(sprintFactory, trelloBoardId, spreadsheetId),
                 new ListSprintCards(sprintFactory, trelloBoardId, spreadsheetId)
             };
 

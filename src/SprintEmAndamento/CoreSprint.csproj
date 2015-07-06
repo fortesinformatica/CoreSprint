@@ -88,6 +88,8 @@
     <Compile Include="CoreTrello\ITrelloFacade.cs" />
     <Compile Include="Helpers\CardHelper.cs" />
     <Compile Include="Helpers\ICardHelper.cs" />
+    <Compile Include="Helpers\IWorksheetHelper.cs" />
+    <Compile Include="Helpers\WorksheetHelper.cs" />
     <Compile Include="ICoreSprintFactory.cs" />
     <Compile Include="Integration\CurrentSprint.cs" />
     <Compile Include="Integration\ICommand.cs" />

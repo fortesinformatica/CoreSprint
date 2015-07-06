@@ -42,6 +42,11 @@ namespace CoreSprint.CoreTrello
             return _connection.Trello.Lists.ForCard(card);
         }
 
+        public IEnumerable<Member> GetMembers(Board board)
+        {
+            return _connection.Trello.Members.ForBoard(board);
+        }
+
         public IEnumerable<Member> GetMembers(Card card)
         {
             return _connection.Trello.Members.ForCard(card);

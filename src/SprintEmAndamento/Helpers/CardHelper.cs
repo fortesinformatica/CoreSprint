@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using CoreSprint.CoreTrello;
 using TrelloNet;
 
@@ -18,6 +17,9 @@ namespace CoreSprint.Helpers
         private readonly string _delimiter;
         private readonly string _strPriorityPattern;
         private readonly string _strEstimatePattern;
+        private readonly Regex _remainderPattern;
+        private readonly Regex _workedPattern;
+        private readonly Regex _numberPattern;
 
         public CardHelper(ITrelloFacade trelloFacade)
         {
@@ -28,6 +30,13 @@ namespace CoreSprint.Helpers
             _delimiter = ";";
             _strPriorityPattern = @"\[i[0-9]+-u[0-9]+\]";
             _strEstimatePattern = string.Format(@"\{{(\s)*({0})(\s)*hora[\sa-zA-Z]*\}}", _strNumberPattern);
+
+            _remainderPattern =
+                new Regex(string.Format(@">(\s)*(restam|restante)(\s)+{0}(\s)+hora[\sa-zA-Z]*", _strNumberPattern),
+                    RegexOptions.IgnoreCase);
+            _workedPattern = new Regex(string.Format(@">(\s)*trabalhado(\s)+{0}(\s)+hora[\sa-zA-Z]*", _strNumberPattern),
+                RegexOptions.IgnoreCase);
+            _numberPattern = new Regex(_strNumberPattern, RegexOptions.IgnoreCase);
         }
 
         public string GetUrgency(string priority)
@@ -51,43 +60,11 @@ namespace CoreSprint.Helpers
             return Regex.Replace(replacedPriority, _strEstimatePattern, "", RegexOptions.IgnoreCase).Trim();
         }
 
-        public Dictionary<string, double> GetWorkedAndRemainder(Card card)
+        public IEnumerable<CommentCardAction> GetCardComments(Card card)
         {
-            var comments = _trelloFacade.GetActions(card, new[] { ActionType.CommentCard }).OfType<CommentCardAction>().Reverse();
-            var numberPattern = new Regex(_strNumberPattern, RegexOptions.IgnoreCase);
-            var workedPattern = new Regex(string.Format(@">(\s)*trabalhado(\s)+{0}(\s)+hora[\sa-zA-Z]*", _strNumberPattern), RegexOptions.IgnoreCase);
-            var remainderPattern = new Regex(string.Format(@">(\s)*(restam|restante)(\s)+{0}(\s)+hora[\sa-zA-Z]*", _strNumberPattern), RegexOptions.IgnoreCase);
-            var worked = 0D;
-            double remainder;
-            var cardEstimate = GetCardEstimate(card);
-
-            double.TryParse(numberPattern.Match(cardEstimate).Value, out remainder);
-
-            //TODO: refatorar
-            foreach (var comment in comments)
-            {
-                var matchesWorked = workedPattern.Matches(comment.Data.Text);
-                var matchesRemainder = remainderPattern.Matches(comment.Data.Text);
-
-                foreach (Match match in matchesWorked)
-                {
-                    var matchNumber = numberPattern.Match(match.Value);
-                    var workedInComment = double.Parse(matchNumber.Value);
-                    worked += matchNumber.Success ? workedInComment : 0D;
-                    remainder -= matchesRemainder.Count > 0 ? 0D : workedInComment;
-                }
-
-                foreach (Match match in matchesRemainder)
-                {
-                    var matchNumber = numberPattern.Match(match.Value);
-                    remainder = matchNumber.Success ? double.Parse(matchNumber.Value) : 0D;
-                }
-            }
-
-            remainder = remainder > 0 ? remainder : 0;
-
-            return new Dictionary<string, double> { { "worked", worked }, { "remainder", remainder } };
+            return _trelloFacade.GetActions(card, new[] { ActionType.CommentCard }).OfType<CommentCardAction>();
         }
+
         public string GetResponsible(Card card)
         {
             return card.IdMembers.Any()
@@ -109,11 +86,10 @@ namespace CoreSprint.Helpers
         {
             var estimatePattern = new Regex(_strEstimatePattern, RegexOptions.IgnoreCase);
             var matchPattern = estimatePattern.Match(card.Name);
-            var numberPattern = new Regex(_strNumberPattern, RegexOptions.IgnoreCase);
 
             if (matchPattern.Success)
             {
-                var numberMatch = numberPattern.Match(matchPattern.Value);
+                var numberMatch = _numberPattern.Match(matchPattern.Value);
                 return numberMatch.Success ? numberMatch.Value.Replace(".", ",") : "0";
             }
             return "0";
@@ -124,6 +100,75 @@ namespace CoreSprint.Helpers
             var pattern = new Regex(_strPriorityPattern, RegexOptions.IgnoreCase);
             var match = pattern.Match(card.Name);
             return match.Success ? match.Value : _nothingValue;
+        }
+
+        public Dictionary<string, double> GetWorkedAndRemainder(Card card)
+        {
+            var comments = GetCardComments(card);
+            return GetWorkedAndRemainder(GetCardEstimate(card), comments);
+        }
+
+        public Dictionary<string, double> GetWorkedAndRemainder(Card card, DateTime until)
+        {
+            var comments = GetCardComments(card);
+            return GetWorkedAndRemainder(GetCardEstimate(card), comments, until);
+        }
+
+        public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments)
+        {
+            return GetWorkedAndRemainder(cardEstimate, comments, null);
+        }
+
+        public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime until)
+        {
+            return GetWorkedAndRemainder(cardEstimate, comments, c => c.Date <= until);
+        }
+
+        public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime startDate, DateTime endDate)
+        {
+            return GetWorkedAndRemainder(cardEstimate, comments, c => c.Date >= startDate && c.Date <= endDate);
+        }
+
+        public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, List<CommentCardAction> comments, string professional,
+            DateTime startDate, DateTime endDate)
+        {
+            return GetWorkedAndRemainder(cardEstimate, comments,
+                c => c.Date >= startDate && c.Date <= endDate && professional.Equals(c.MemberCreator.FullName));
+        }
+
+        private Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, Func<CommentCardAction, bool> validateComment)
+        {
+            var worked = 0D;
+            var strRemainder = _numberPattern.Match(cardEstimate).Value;
+            var cultureInfo = new CultureInfo("en-US");
+            var remainder = double.Parse(string.IsNullOrWhiteSpace(strRemainder) ? "0" : strRemainder, cultureInfo);
+
+            //TODO: refatorar
+            foreach (var comment in comments.Reverse())
+            {
+                if (validateComment != null && !validateComment(comment))
+                    continue;
+
+                var matchesWorked = _workedPattern.Matches(comment.Data.Text);
+                var matchesRemainder = _remainderPattern.Matches(comment.Data.Text);
+
+                foreach (Match match in matchesWorked)
+                {
+                    var matchNumber = _numberPattern.Match(match.Value);
+                    var workedInComment = double.Parse(matchNumber.Value, cultureInfo);
+                    worked += matchNumber.Success ? workedInComment : 0D;
+                    remainder -= matchesRemainder.Count > 0 ? 0D : workedInComment;
+                }
+
+                foreach (var matchNumber in from Match match in matchesRemainder select _numberPattern.Match(match.Value))
+                {
+                    remainder = matchNumber.Success ? double.Parse(matchNumber.Value, cultureInfo) : 0D;
+                }
+            }
+
+            remainder = remainder > 0 ? remainder : 0;
+
+            return new Dictionary<string, double> { { "worked", worked }, { "remainder", remainder } };
         }
     }
 }

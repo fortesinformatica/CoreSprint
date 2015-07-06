@@ -41,5 +41,10 @@ namespace CoreSprint
         {
             return new CardHelper(GetTrelloFacade());
         }
+
+        public IWorksheetHelper GetWorksheetHelper()
+        {
+            return new WorksheetHelper(GetSpreadsheetFacade());
+        }
     }
 }

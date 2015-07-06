@@ -11,5 +11,6 @@ namespace CoreSprint
         ITrelloFacade GetTrelloFacade();
         ISpreadsheetFacade GetSpreadsheetFacade();
         ICardHelper GetCardHelper();
+        IWorksheetHelper GetWorksheetHelper();
     }
 }
