@@ -31,12 +31,25 @@ namespace CoreSprint.CoreSpreadsheet
             RedirectUri = "urn:ietf:wg:oauth:2.0:oob";
 
             var parameters = GetParameters();
+            var requestOk = false;
 
-            var authorizationUrl = OAuthUtil.CreateOAuth2AuthorizationUrl(parameters);
-            parameters.AccessCode = GetAccessCode(authorizationUrl);
-            OAuthUtil.GetAccessToken(parameters);
+            if (File.Exists(_trelloConfig))
+            {
+                var configuration = GetConfiguration();
+                parameters.RefreshToken = configuration["refreshToken"];
+                OAuthUtil.RefreshAccessToken(parameters);
+                requestOk = TestRequest(parameters);
+            }
 
-            File.WriteAllLines(_trelloConfig, new List<string> { parameters.AccessCode, parameters.AccessToken, parameters.RefreshToken });
+            if (!requestOk)
+            {
+                parameters = GetParameters();
+                var authorizationUrl = OAuthUtil.CreateOAuth2AuthorizationUrl(parameters);
+                parameters.AccessCode = GetAccessCode(authorizationUrl);
+                OAuthUtil.GetAccessToken(parameters);
+            }
+
+            File.WriteAllLines(_trelloConfig, new List<string> { parameters.AccessToken, parameters.RefreshToken });
             Console.WriteLine("\r\nConfiguração do Google Planilhas finalizada!");
         }
 
@@ -85,10 +98,10 @@ namespace CoreSprint.CoreSpreadsheet
 
         public static Dictionary<string, string> GetConfiguration()
         {
-            if (HasConfiguration())
+            if (File.Exists(_trelloConfig))
             {
                 var configLines = File.ReadAllLines(_trelloConfig);
-                return new Dictionary<string, string> { {"accessCode", configLines[0]}, { "accessToken", configLines[1] }, { "refreshToken", configLines[2] } };
+                return new Dictionary<string, string> { { "accessToken", configLines[0] }, { "refreshToken", configLines[1] } };
             }
             throw new Exception("Você ainda não configurou a integração com o Google Planilhas.");
         }
@@ -99,37 +112,38 @@ namespace CoreSprint.CoreSpreadsheet
             {
                 var configLines = File.ReadAllLines(_trelloConfig);
                 var hasThreeLines = configLines.Length > 2;
+                var parameters = GetParameters();
 
-                if (hasThreeLines)
-                {
-                    try
-                    {
-                        var parameters = GetParameters();
-                        parameters.AccessCode = configLines[0];
-                        parameters.AccessToken = configLines[1];
-                        parameters.RefreshToken = configLines[2];
+                parameters.AccessToken = configLines[0];
+                parameters.RefreshToken = configLines[1];
 
-                        var spreadsheetService = new SpreadsheetsService(Constants.GoogleApiAppName)
-                        {
-                            RequestFactory = new GOAuth2RequestFactory(null, Constants.GoogleApiAppName, parameters)
-                        };
-
-                        var spreadsheetQuery = new SpreadsheetQuery();
-                        spreadsheetService.Query(spreadsheetQuery);
-
-                        return true;
-                    }
-                    catch (GDataRequestException e)
-                    {
-                        var message = e.InnerException != null ? e.InnerException.Message : "";
-                        if (message.Contains("(401) Unauthorized"))
-                            return false;
-                        throw;
-                    }
-                }
+                return hasThreeLines && TestRequest(parameters);
             }
 
             return false;
+        }
+
+        private static bool TestRequest(OAuth2Parameters parameters)
+        {
+            try
+            {
+                var spreadsheetService = new SpreadsheetsService(Constants.GoogleApiAppName)
+                {
+                    RequestFactory = new GOAuth2RequestFactory(null, Constants.GoogleApiAppName, parameters)
+                };
+
+                var spreadsheetQuery = new SpreadsheetQuery();
+                spreadsheetService.Query(spreadsheetQuery);
+
+                return true;
+            }
+            catch (GDataRequestException e)
+            {
+                var message = e.InnerException != null ? e.InnerException.Message : "";
+                if (message.Contains("(401) Unauthorized"))
+                    return false;
+                throw;
+            }
         }
 
         private static OAuth2Parameters GetParameters()

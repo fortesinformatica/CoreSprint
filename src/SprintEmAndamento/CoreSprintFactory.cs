@@ -19,10 +19,9 @@ namespace CoreSprint
         public ISpreadsheetConnection GetSpreadsheetConnection()
         {
             var spreadsheetConfiguration = SpreadsheetConfiguration.GetConfiguration();
-            var googleApiAccessCode = spreadsheetConfiguration["accessCode"];
             var googleApiUserToken = spreadsheetConfiguration["accessToken"];
             var googleApiRefreshToken = spreadsheetConfiguration["refreshToken"];
-            var spreadsheetConn = new SpreadsheetConnection(googleApiAccessCode, googleApiUserToken, googleApiRefreshToken);
+            var spreadsheetConn = new SpreadsheetConnection(googleApiUserToken, googleApiRefreshToken);
             return spreadsheetConn;
         }
 

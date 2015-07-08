@@ -29,9 +29,10 @@ namespace CoreSprint.Integration
 
         public void Execute()
         {
+            const string worksheetName = "SprintCorrente";
+
             Console.WriteLine("Recuperando alocações dos profissionais...");
 
-            const string worksheetName = "SprintCorrente";
             var cards = _trelloFacade.GetCards(_trelloBoardId);
 
             //recupera variáveis
@@ -46,12 +47,18 @@ namespace CoreSprint.Integration
             var firstColumn = _spreadsheetFacade.GetCellValue(worksheet, 1, uint.MaxValue, 1, 1).ToList();
             var sprintPlanningPos = GetSprintPlanningPositions(firstColumn);
             var sprintRunningPos = GetSprintRunningPositions(firstColumn);
+            var sprintAllocationByLabelsPos = GetSprintAllocationByLabelsPositions(firstColumn);
             //
 
             var resultOfAnalysis = AnalyzeCards(cards, startDate, endDate);
+            UpdateSpreadsheet(worksheet, resultOfAnalysis, sprintPlanningPos, sprintRunningPos, sprintAllocationByLabelsPos);
+        }
 
+        private void UpdateSpreadsheet(WorksheetEntry worksheet, Dictionary<string, Dictionary<string, double>> resultOfAnalysis, Dictionary<string, uint> sprintPlanningPos,
+            Dictionary<string, uint> sprintRunningPos, Dictionary<string, uint> sprintAllocationByLabelsPos)
+        {
             Console.WriteLine("Atualizando relatório de planejamento de sprint...");
-            
+
             Console.WriteLine("\t> Atualizando alocações...");
             SaveCurrentSprintData(worksheet, resultOfAnalysis["allocationsByResponsible"], sprintPlanningPos, 3);
 
@@ -63,6 +70,9 @@ namespace CoreSprint.Integration
 
             Console.WriteLine("\t> Atualizando tempo trabalhado no sprint para alocações...");
             SaveCurrentSprintData(worksheet, resultOfAnalysis["workedOnAllocations"], sprintRunningPos, 5);
+
+            Console.WriteLine("\t> Atualizando alocações por rótulo...");
+            SaveCurrentSprintData(worksheet, resultOfAnalysis["allocationByLabels"], sprintAllocationByLabelsPos, 2);
         }
 
         private void SaveCurrentSprintData(WorksheetEntry worksheet, Dictionary<string, double> resultOfAnalysis, Dictionary<string, uint> sectionPositions, uint columnPosition)
@@ -89,6 +99,7 @@ namespace CoreSprint.Integration
             var remainderByResponsible = new Dictionary<string, double>();
             var workedOnAllocations = new Dictionary<string, double>();
             var totalWorked = new Dictionary<string, double>();
+            var allocationByLabels = new Dictionary<string, double>();
 
             foreach (var card in enumerableCards)
             {
@@ -97,6 +108,7 @@ namespace CoreSprint.Integration
                 var responsibles = _cardHelper.GetResponsible(card).Trim().Replace("-", "--Ninguém--");
                 var estimate = _cardHelper.GetCardEstimate(card);
                 var comments = _cardHelper.GetCardComments(card).ToList();
+                var labels = _cardHelper.GetCardLabels(card);
 
                 var beforeRunning = _cardHelper.GetWorkedAndRemainder(estimate, comments, startDate);
                 var running = _cardHelper.GetWorkedAndRemainder(estimate, comments, endDate);
@@ -104,6 +116,7 @@ namespace CoreSprint.Integration
                 foreach (var responsible in responsibles.Split(';'))
                 {
                     var runningByResponsible = _cardHelper.GetWorkedAndRemainder(estimate, comments, responsible, startDate, endDate);
+
                     Calculate(allocationsByResponsible, responsible, beforeRunning["remainder"]);
                     Calculate(remainderByResponsible, responsible, running["remainder"]);
                     Calculate(workedOnAllocations, responsible, runningByResponsible["worked"]);
@@ -114,36 +127,53 @@ namespace CoreSprint.Integration
                     var onAllocations = _cardHelper.GetWorkedAndRemainder(estimate, comments, boardMember.FullName, startDate, endDate);
                     Calculate(totalWorked, boardMember.FullName, onAllocations["worked"]);
                 }
+
+                foreach (var label in labels.Split(';'))
+                {
+                    Calculate(allocationByLabels, label, beforeRunning["remainder"]);
+                }
             }
 
             result.Add("allocationsByResponsible", allocationsByResponsible);
             result.Add("remainderByResponsible", remainderByResponsible);
             result.Add("workedOnAllocations", workedOnAllocations);
             result.Add("totalWorked", totalWorked);
+            result.Add("allocationByLabels", allocationByLabels);
 
             return result;
         }
 
-        private static void Calculate(Dictionary<string, double> information, string responsible, double remainder)
+        private static void Calculate(Dictionary<string, double> information, string label, double value)
         {
-            if (!information.ContainsKey(responsible))
-                information.Add(responsible, 0D);
-            information[responsible] += remainder;
+            if (!information.ContainsKey(label))
+                information.Add(label, 0D);
+            information[label] += value;
         }
 
-        private void SetSprintValueByResponsible(WorksheetEntry worksheet, Dictionary<string, uint> sprintPlanningPos, uint columnPosition, string responsible, double estimate)
+        private void SetSprintValueByResponsible(WorksheetEntry worksheet, Dictionary<string, uint> sprintPlanningPos, uint columnPosition, string label, double value)
         {
             var index =
                 sprintPlanningPos.FirstOrDefault(
                     k =>
-                        k.Key.ToLower().Contains(responsible.ToLower()) ||
-                        responsible.ToLower().Contains(k.Key.ToLower())).Value;
+                        k.Key.ToLower().Contains(label.ToLower()) ||
+                        label.ToLower().Contains(k.Key.ToLower())).Value;
 
             if (index > 0)
                 _spreadsheetFacade.SaveToCell(worksheet, index, columnPosition,
-                    estimate.ToString(CultureInfo.InvariantCulture).Replace(".", ","));
+                    value.ToString(CultureInfo.InvariantCulture).Replace(".", ","));
         }
 
+        private Dictionary<string, uint> GetSprintAllocationByLabelsPositions(IEnumerable<CellEntry> firstColumn)
+        {
+            var positions = new Dictionary<string, uint>();
+            var cellEntries = firstColumn as IList<CellEntry> ?? firstColumn.ToList();
+
+            CalculateSectionPosition(cellEntries, positions,
+                c => c.Value.Equals("Alocações por rótulo"),
+                c => c.Value.Contains("#"));
+
+            return positions;
+        }
         private Dictionary<string, uint> GetSprintRunningPositions(IEnumerable<CellEntry> firstColumn)
         {
             var positions = new Dictionary<string, uint>();
@@ -151,7 +181,7 @@ namespace CoreSprint.Integration
 
             CalculateSectionPosition(cellEntries, positions,
                 c => c.Value.Equals("Relatório de andamento do sprint"),
-                c => false);
+                c => c.Value.Contains("#"));
 
             return positions;
         }
@@ -163,7 +193,7 @@ namespace CoreSprint.Integration
 
             CalculateSectionPosition(cellEntries, positions,
                 c => c.Value.Equals("Relatório de planejamento do sprint"),
-                c => c.Value.Equals("Relatório de andamento do sprint"));
+                c => c.Value.Contains("#"));
 
             return positions;
         }
@@ -181,7 +211,7 @@ namespace CoreSprint.Integration
                     continue;
                 }
 
-                if (checkIfOutFromSection(cellEntry))
+                if (inSection && checkIfOutFromSection(cellEntry))
                     break;
 
                 if (inSection && !string.IsNullOrWhiteSpace(cellEntry.Value))

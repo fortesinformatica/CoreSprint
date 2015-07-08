@@ -87,6 +87,7 @@
     <Compile Include="CoreTrello\ITrelloConnection.cs" />
     <Compile Include="CoreTrello\ITrelloFacade.cs" />
     <Compile Include="Helpers\CardHelper.cs" />
+    <Compile Include="Helpers\CommentHelper.cs" />
     <Compile Include="Helpers\ICardHelper.cs" />
     <Compile Include="Helpers\IWorksheetHelper.cs" />
     <Compile Include="Helpers\WorksheetHelper.cs" />

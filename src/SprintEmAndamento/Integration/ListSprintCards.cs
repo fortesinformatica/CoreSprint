@@ -54,7 +54,20 @@ namespace CoreSprint.Integration
 
         private static List<string> GetHeadersName()
         {
-            return new List<string> { "status", "titulo", "responsaveis", "importancia", "urgencia", "estimativa", "trabalhado", "restante", "reestimativa", "rotulos", "link" };
+            return new List<string>
+            {
+                "status",
+                "titulo",
+                "responsaveis",
+                "importancia",
+                "urgencia",
+                "estimativa",
+                "trabalhado",
+                "restante",
+                "reestimativa",
+                "rotulos",
+                "link"
+            };
         }
 
         private ListEntry MountWorksheetRow(Card card)
