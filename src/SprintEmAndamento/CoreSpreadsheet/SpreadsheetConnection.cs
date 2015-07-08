@@ -7,12 +7,12 @@ namespace CoreSprint.CoreSpreadsheet
     {
         public SpreadsheetsService SpreadsheetService { get; private set; }
 
-        public SpreadsheetConnection(string userToken, string refreshToken)
+        public SpreadsheetConnection(string accessCode, string userToken, string refreshToken)
         {
-            Authenticate(userToken, refreshToken);
+            Authenticate(accessCode, userToken, refreshToken);
         }
 
-        private void Authenticate(string userToken, string refreshToken)
+        private void Authenticate(string accessCode, string userToken, string refreshToken)
         {
             var parameters = new OAuth2Parameters
             {
@@ -21,7 +21,8 @@ namespace CoreSprint.CoreSpreadsheet
                 RedirectUri = SpreadsheetConfiguration.RedirectUri,
                 Scope = SpreadsheetConfiguration.Scope,
                 RefreshToken = refreshToken,
-                AccessToken = userToken
+                AccessToken = userToken,
+                AccessCode = accessCode
             };
 
             SpreadsheetService = new SpreadsheetsService(Constants.GoogleApiAppName)

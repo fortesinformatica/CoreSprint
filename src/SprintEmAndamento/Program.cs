@@ -6,7 +6,7 @@ using CoreSprint.Integration;
 
 namespace CoreSprint
 {
-    public class Program
+    public class Program 
     {
         static void Main(string[] args)
         {

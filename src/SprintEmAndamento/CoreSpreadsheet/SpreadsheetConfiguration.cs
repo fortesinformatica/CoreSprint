@@ -36,7 +36,7 @@ namespace CoreSprint.CoreSpreadsheet
             parameters.AccessCode = GetAccessCode(authorizationUrl);
             OAuthUtil.GetAccessToken(parameters);
 
-            File.WriteAllLines(_trelloConfig, new List<string> { parameters.AccessToken, parameters.RefreshToken });
+            File.WriteAllLines(_trelloConfig, new List<string> { parameters.AccessCode, parameters.AccessToken, parameters.RefreshToken });
             Console.WriteLine("\r\nConfiguração do Google Planilhas finalizada!");
         }
 
@@ -88,7 +88,7 @@ namespace CoreSprint.CoreSpreadsheet
             if (HasConfiguration())
             {
                 var configLines = File.ReadAllLines(_trelloConfig);
-                return new Dictionary<string, string> { { "accessToken", configLines[0] }, { "refreshToken", configLines[1] } };
+                return new Dictionary<string, string> { {"accessCode", configLines[0]}, { "accessToken", configLines[1] }, { "refreshToken", configLines[2] } };
             }
             throw new Exception("Você ainda não configurou a integração com o Google Planilhas.");
         }
@@ -98,15 +98,16 @@ namespace CoreSprint.CoreSpreadsheet
             if (File.Exists(_trelloConfig))
             {
                 var configLines = File.ReadAllLines(_trelloConfig);
-                var hasTwoLines = configLines.Length > 1;
+                var hasThreeLines = configLines.Length > 2;
 
-                if (hasTwoLines)
+                if (hasThreeLines)
                 {
                     try
                     {
                         var parameters = GetParameters();
-                        parameters.AccessToken = configLines[0];
-                        parameters.RefreshToken = configLines[1];
+                        parameters.AccessCode = configLines[0];
+                        parameters.AccessToken = configLines[1];
+                        parameters.RefreshToken = configLines[2];
 
                         var spreadsheetService = new SpreadsheetsService(Constants.GoogleApiAppName)
                         {
