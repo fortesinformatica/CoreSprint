@@ -39,7 +39,12 @@ namespace CoreSprint
 
         public ICardHelper GetCardHelper()
         {
-            return new CardHelper(GetTrelloFacade());
+            return new CardHelper(GetTrelloFacade(), GetCommentHelper());
+        }
+
+        public ICommentHelper GetCommentHelper()
+        {
+            return new CommentHelper();
         }
 
         public IWorksheetHelper GetWorksheetHelper()

@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreSprint", "src\SprintEmAndamento\CoreSprint.csproj", "{2993CFE4-F0B4-4438-A2E7-75346BB55BC3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreSprint.Test", "CoreSprint.Test\CoreSprint.Test.csproj", "{A54E469C-4D1F-4E5F-A94C-522011EC5D9F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{2993CFE4-F0B4-4438-A2E7-75346BB55BC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2993CFE4-F0B4-4438-A2E7-75346BB55BC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2993CFE4-F0B4-4438-A2E7-75346BB55BC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A54E469C-4D1F-4E5F-A94C-522011EC5D9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A54E469C-4D1F-4E5F-A94C-522011EC5D9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A54E469C-4D1F-4E5F-A94C-522011EC5D9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A54E469C-4D1F-4E5F-A94C-522011EC5D9F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

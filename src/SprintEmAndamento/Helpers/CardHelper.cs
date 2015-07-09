@@ -11,6 +11,7 @@ namespace CoreSprint.Helpers
     public class CardHelper : ICardHelper
     {
         private readonly ITrelloFacade _trelloFacade;
+        private readonly ICommentHelper _commentHelper;
 
         private readonly string _strNumberPattern;
         private readonly string _nothingValue;
@@ -21,9 +22,10 @@ namespace CoreSprint.Helpers
         private readonly Regex _workedPattern;
         private readonly Regex _numberPattern;
 
-        public CardHelper(ITrelloFacade trelloFacade)
+        public CardHelper(ITrelloFacade trelloFacade, ICommentHelper commentHelper)
         {
             _trelloFacade = trelloFacade;
+            _commentHelper = commentHelper;
 
             _strNumberPattern = @"[0-9]+[\.,]?[0-9]*";
             _nothingValue = "-";
@@ -121,19 +123,29 @@ namespace CoreSprint.Helpers
 
         public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime until)
         {
-            return GetWorkedAndRemainder(cardEstimate, comments, c => c.Date <= until);
+            return GetWorkedAndRemainder(cardEstimate, comments, c => _commentHelper.GetDateInComment(c) <= until);
         }
 
         public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime startDate, DateTime endDate)
         {
-            return GetWorkedAndRemainder(cardEstimate, comments, c => c.Date >= startDate && c.Date <= endDate);
+            return GetWorkedAndRemainder(cardEstimate, comments, c =>
+            {
+                var dateInComment = _commentHelper.GetDateInComment(c);
+                return dateInComment >= startDate && dateInComment <= endDate;
+            });
         }
 
         public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, List<CommentCardAction> comments, string professional,
             DateTime startDate, DateTime endDate)
         {
             return GetWorkedAndRemainder(cardEstimate, comments,
-                c => c.Date >= startDate && c.Date <= endDate && professional.Equals(c.MemberCreator.FullName));
+                c =>
+                {
+                    var dateInComment = _commentHelper.GetDateInComment(c);
+                    return dateInComment >= startDate &&
+                           dateInComment <= endDate &&
+                           professional.Equals(c.MemberCreator.FullName);
+                });
         }
 
         private Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, Func<CommentCardAction, bool> validateComment)
