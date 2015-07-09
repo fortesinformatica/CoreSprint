@@ -29,7 +29,7 @@ namespace CoreSprint.Test.Helpers
 
             var date = _commentHelper.GetDateInComment(comment);
 
-            Assert.AreEqual(new DateTime(2015, 7, 7), date);
+            Assert.AreEqual(new DateTime(2015, 7, 7, 3, 0, 0), date);
         }
 
         [Test]
@@ -46,6 +46,38 @@ namespace CoreSprint.Test.Helpers
 
             var date = _commentHelper.GetDateInComment(comment);
             Assert.AreEqual(new DateTime(2015, 7, 8), date);
+        }
+
+        [Test]
+        public void PossoUtilizarADataComAHoraEMinutoAlteradosPorUmComentarioDeInicioDeTrabalho()
+        {
+            var comment = new CommentCardAction
+            {
+                Date = new DateTime(2015, 7, 8, 16, 15, 0),
+                Data = new CommentCardAction.ActionData
+                {
+                    Text = "> inicia em 13:30"
+                }
+            };
+
+            var date = _commentHelper.GetDateInComment(comment);
+            Assert.AreEqual(new DateTime(2015, 7, 8, 16, 30, 00), date);
+        }
+
+        [Test]
+        public void PossoUtilizarADataComAHoraEMinutoAlteradosPorUmComentarioDePausaDeTrabalho()
+        {
+            var comment = new CommentCardAction
+            {
+                Date = new DateTime(2015, 7, 8, 16, 15, 0),
+                Data = new CommentCardAction.ActionData
+                {
+                    Text = "> pausa em 13:30"
+                }
+            };
+
+            var date = _commentHelper.GetDateInComment(comment);
+            Assert.AreEqual(new DateTime(2015, 7, 8, 16, 30, 00), date);
         }
     }
 }

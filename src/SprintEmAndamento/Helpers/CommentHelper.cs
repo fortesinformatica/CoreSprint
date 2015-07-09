@@ -14,21 +14,48 @@ namespace CoreSprint.Helpers
     {
         public DateTime GetDateInComment(CommentCardAction comment)
         {
-            var strDatePattern = @"[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]";
-            var strPattern = string.Format(@">(.)*{0}", strDatePattern);
-            var pattern = new Regex(strPattern, RegexOptions.IgnoreCase);
-            var match = pattern.Match(comment.Data.Text);
+            const string strDatePattern = @"[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]";
 
-            if (match.Success)
+            var strPatternWorked = string.Format(@">(.)*{0}", strDatePattern);
+            var patternWorked = new Regex(strPatternWorked, RegexOptions.IgnoreCase);
+            var matchWorked = patternWorked.Match(comment.Data.Text);
+
+            if (matchWorked.Success)
             {
-                var datePattern = new Regex(strDatePattern, RegexOptions.IgnoreCase);
-                var dateMatch = datePattern.Match(match.Value);
                 var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
-                
-                return Convert.ToDateTime(dateMatch.Value, dateFormat);
+                var datePattern = new Regex(strDatePattern, RegexOptions.IgnoreCase);
+                var dateMatch = datePattern.Match(matchWorked.Value);
+
+                var dateInComment = Convert.ToDateTime(dateMatch.Value, dateFormat);
+                dateInComment = dateInComment.AddHours(3);
+                return dateInComment;
             }
 
-            return comment.Date;
+            return GetDateTimeChangedWhenTimeInformedInWork(comment) ?? comment.Date;
+        }
+
+        private static DateTime? GetDateTimeChangedWhenTimeInformedInWork(CommentCardAction comment)
+        {
+            DateTime? dateChanged = null;
+            const string strWorkPattern = @">(\s)*(pausa|para|inicia)";
+            const string strHourPattern = @"[0-2][0-9]:[0-5][0-9]";
+
+            var strStopedWork = string.Format(@"{0}(.)*{1}", strWorkPattern, strHourPattern);
+            var stopWorkPattern = new Regex(strStopedWork);
+            var matchStopWork = stopWorkPattern.Match(comment.Data.Text);
+
+            if (matchStopWork.Success)
+            {
+                var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
+                var hourPattern = new Regex(strHourPattern);
+                var matchHourPattern = hourPattern.Match(matchStopWork.Value);
+                var strDateStopWork = string.Format("{0}/{1}/{2} {3}:00", comment.Date.Year, comment.Date.Month,
+                    comment.Date.Day, matchHourPattern.Value);
+
+                dateChanged = Convert.ToDateTime(strDateStopWork, dateFormat);
+                dateChanged = dateChanged.Value.AddHours(3);
+            }
+            return dateChanged;
         }
     }
 }

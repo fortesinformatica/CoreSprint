@@ -21,6 +21,8 @@ namespace CoreSprint.Helpers
         private readonly Regex _remainderPattern;
         private readonly Regex _workedPattern;
         private readonly Regex _numberPattern;
+        private readonly Regex _startWorkPattern;
+        private readonly Regex _stopWorkPattern;
 
         public CardHelper(ITrelloFacade trelloFacade, ICommentHelper commentHelper)
         {
@@ -30,15 +32,18 @@ namespace CoreSprint.Helpers
             _strNumberPattern = @"[0-9]+[\.,]?[0-9]*";
             _nothingValue = "-";
             _delimiter = ";";
+
             _strPriorityPattern = @"\[i[0-9]+-u[0-9]+\]";
             _strEstimatePattern = string.Format(@"\{{(\s)*({0})(\s)*hora[\sa-zA-Z]*\}}", _strNumberPattern);
 
+            _numberPattern = new Regex(_strNumberPattern, RegexOptions.IgnoreCase);
             _remainderPattern =
                 new Regex(string.Format(@">(\s)*(restam|restante)(\s)+{0}(\s)+hora[\sa-zA-Z]*", _strNumberPattern),
                     RegexOptions.IgnoreCase);
             _workedPattern = new Regex(string.Format(@">(\s)*trabalhado(\s)+{0}(\s)+hora[\sa-zA-Z]*", _strNumberPattern),
                 RegexOptions.IgnoreCase);
-            _numberPattern = new Regex(_strNumberPattern, RegexOptions.IgnoreCase);
+            _startWorkPattern = new Regex(@">(\s)*inicia");
+            _stopWorkPattern = new Regex(@">(\s)*(pausa|para)");
         }
 
         public string GetUrgency(string priority)
@@ -150,12 +155,15 @@ namespace CoreSprint.Helpers
 
         private Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, Func<CommentCardAction, bool> validateComment)
         {
-            var worked = 0D;
-            var strRemainder = _numberPattern.Match(cardEstimate).Value;
             var cultureInfo = new CultureInfo("en-US");
-            var remainder = double.Parse(string.IsNullOrWhiteSpace(strRemainder) ? "0" : strRemainder, cultureInfo);
 
-            //TODO: refatorar
+            var strRemainder = _numberPattern.Match(cardEstimate).Value;
+            var remainder = double.Parse(string.IsNullOrWhiteSpace(strRemainder) ? "0" : strRemainder, cultureInfo);
+            var worked = 0D;
+            
+            var workStarted = false;
+            var dateTimeWorkStarted = default(DateTime);
+
             var sortComparer = new CommentSortComparer(_commentHelper);
             var commentCardActions = comments as IList<CommentCardAction> ?? comments.ToList();
             var cardActions = commentCardActions as List<CommentCardAction>;
@@ -163,31 +171,60 @@ namespace CoreSprint.Helpers
             if (cardActions != null)
                 cardActions.Sort(sortComparer);
 
-            foreach (var comment in commentCardActions)
+            foreach (var comment in commentCardActions.Where(comment => validateComment == null || validateComment(comment)))
             {
-                if (validateComment != null && !validateComment(comment))
-                    continue;
-
-                var matchesWorked = _workedPattern.Matches(comment.Data.Text);
-                var matchesRemainder = _remainderPattern.Matches(comment.Data.Text);
-
-                foreach (Match match in matchesWorked)
-                {
-                    var matchNumber = _numberPattern.Match(match.Value);
-                    var workedInComment = double.Parse(matchNumber.Value, cultureInfo);
-                    worked += matchNumber.Success ? workedInComment : 0D;
-                    remainder -= matchesRemainder.Count > 0 ? 0D : workedInComment;
-                }
-
-                foreach (var matchNumber in from Match match in matchesRemainder select _numberPattern.Match(match.Value))
-                {
-                    remainder = matchNumber.Success ? double.Parse(matchNumber.Value, cultureInfo) : 0D;
-                }
+                worked += CalculateRunningWorked(comment, ref workStarted, ref dateTimeWorkStarted);
+                worked += CalculateWorkedAndReminder(comment, cultureInfo, ref remainder);
             }
 
             remainder = remainder > 0 ? remainder : 0;
 
             return new Dictionary<string, double> { { "worked", worked }, { "remainder", remainder } };
+        }
+
+        private double CalculateWorkedAndReminder(CommentCardAction comment, CultureInfo cultureInfo, ref double remainder)
+        {
+            var worked = 0D;
+            var matchesWorked = _workedPattern.Matches(comment.Data.Text);
+            var matchesRemainder = _remainderPattern.Matches(comment.Data.Text);
+
+            foreach (Match match in matchesWorked)
+            {
+                var matchNumber = _numberPattern.Match(match.Value);
+                var workedInComment = double.Parse(matchNumber.Value, cultureInfo);
+                worked += matchNumber.Success ? workedInComment : 0D;
+                remainder -= matchesRemainder.Count > 0 ? 0D : workedInComment;
+            }
+
+            foreach (var matchNumber in from Match match in matchesRemainder select _numberPattern.Match(match.Value))
+            {
+                remainder = matchNumber.Success ? double.Parse(matchNumber.Value, cultureInfo) : 0D;
+            }
+            return worked;
+        }
+
+        private double CalculateRunningWorked(CommentCardAction comment, ref bool workStarted, ref DateTime dateTimeWorkStarted)
+        {
+            double runningWorked = 0;
+            var matchStartedWork = _startWorkPattern.Match(comment.Data.Text);
+
+            if (matchStartedWork.Success)
+            {
+                workStarted = true;
+                dateTimeWorkStarted = _commentHelper.GetDateInComment(comment);
+            }
+
+            if (workStarted)
+            {
+                var matchStopedWork = _stopWorkPattern.Match(comment.Data.Text);
+                if (matchStopedWork.Success)
+                {
+                    var workRunning = _commentHelper.GetDateInComment(comment) - dateTimeWorkStarted;
+                    runningWorked += workRunning.TotalHours > 0 ? workRunning.TotalHours : 0;
+                    workStarted = false;
+                }
+            }
+            return runningWorked;
         }
     }
 
