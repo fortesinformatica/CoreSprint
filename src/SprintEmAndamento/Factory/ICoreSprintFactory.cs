@@ -2,7 +2,7 @@ using CoreSprint.CoreSpreadsheet;
 using CoreSprint.CoreTrello;
 using CoreSprint.Helpers;
 
-namespace CoreSprint
+namespace CoreSprint.Factory
 {
     public interface ICoreSprintFactory
     {

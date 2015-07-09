@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using CoreSprint.CoreSpreadsheet;
 using CoreSprint.CoreTrello;
+using CoreSprint.Factory;
 using CoreSprint.Integration;
 
 namespace CoreSprint

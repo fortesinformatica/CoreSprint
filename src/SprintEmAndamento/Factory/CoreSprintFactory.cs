@@ -2,7 +2,7 @@
 using CoreSprint.CoreTrello;
 using CoreSprint.Helpers;
 
-namespace CoreSprint
+namespace CoreSprint.Factory
 {
     //TODO: Substituir por injetor de dependências
     public class CoreSprintFactory : ICoreSprintFactory

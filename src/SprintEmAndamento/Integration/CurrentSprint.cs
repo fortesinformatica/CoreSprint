@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using CoreSprint.CoreSpreadsheet;
 using CoreSprint.CoreTrello;
+using CoreSprint.Factory;
 using CoreSprint.Helpers;
 using Google.GData.Spreadsheets;
 using TrelloNet;
@@ -105,7 +106,7 @@ namespace CoreSprint.Integration
             {
                 Console.WriteLine("\t> ({0}/{1}) Cartão: {2}", ++i, count, card.Name);
 
-                var responsibles = _cardHelper.GetResponsible(card).Trim().Replace("-", "--Ninguém--");
+                var responsibles = _cardHelper.GetResponsible(card).Trim().Replace("-", "--Indefinido--");
                 var estimate = _cardHelper.GetCardEstimate(card);
                 var comments = _cardHelper.GetCardComments(card).ToList();
                 var labels = _cardHelper.GetCardLabels(card);

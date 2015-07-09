@@ -14,6 +14,7 @@ namespace CoreSprint.Helpers
     {
         public DateTime GetDateInComment(CommentCardAction comment)
         {
+            //TODO: não deve ter trabalhado, pausa ou início simultâneos no mesmo comentário
             const string strDatePattern = @"[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]";
 
             var strPatternWorked = string.Format(@">(.)*{0}", strDatePattern);

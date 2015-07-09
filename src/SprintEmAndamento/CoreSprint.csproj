@@ -91,7 +91,7 @@
     <Compile Include="Helpers\ICardHelper.cs" />
     <Compile Include="Helpers\IWorksheetHelper.cs" />
     <Compile Include="Helpers\WorksheetHelper.cs" />
-    <Compile Include="ICoreSprintFactory.cs" />
+    <Compile Include="Factory\ICoreSprintFactory.cs" />
     <Compile Include="Integration\CurrentSprint.cs" />
     <Compile Include="Integration\ICommand.cs" />
     <Compile Include="Integration\ListSprintCards.cs" />
@@ -103,7 +103,7 @@
     <Compile Include="CoreTrello\TrelloConfiguration.cs" />
     <Compile Include="CoreTrello\TrelloFacade.cs" />
     <Compile Include="CoreTrello\TrelloConnection.cs" />
-    <Compile Include="CoreSprintFactory.cs" />
+    <Compile Include="Factory\CoreSprintFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

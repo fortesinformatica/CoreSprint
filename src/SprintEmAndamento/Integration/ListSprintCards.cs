@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using CoreSprint.CoreSpreadsheet;
 using CoreSprint.CoreTrello;
+using CoreSprint.Factory;
 using CoreSprint.Helpers;
 using Google.GData.Spreadsheets;
 using TrelloNet;
