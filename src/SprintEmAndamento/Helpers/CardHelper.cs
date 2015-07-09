@@ -156,7 +156,14 @@ namespace CoreSprint.Helpers
             var remainder = double.Parse(string.IsNullOrWhiteSpace(strRemainder) ? "0" : strRemainder, cultureInfo);
 
             //TODO: refatorar
-            foreach (var comment in comments.Reverse())
+            var sortComparer = new CommentSortComparer(_commentHelper);
+            var commentCardActions = comments as IList<CommentCardAction> ?? comments.ToList();
+            var cardActions = commentCardActions as List<CommentCardAction>;
+            
+            if (cardActions != null)
+                cardActions.Sort(sortComparer);
+
+            foreach (var comment in commentCardActions)
             {
                 if (validateComment != null && !validateComment(comment))
                     continue;
@@ -181,6 +188,24 @@ namespace CoreSprint.Helpers
             remainder = remainder > 0 ? remainder : 0;
 
             return new Dictionary<string, double> { { "worked", worked }, { "remainder", remainder } };
+        }
+    }
+
+    class CommentSortComparer : IComparer<CommentCardAction>
+    {
+        private readonly ICommentHelper _commentHelper;
+
+        public CommentSortComparer(ICommentHelper commentHelper)
+        {
+            _commentHelper = commentHelper;
+        }
+
+        public int Compare(CommentCardAction x, CommentCardAction y)
+        {
+            var dateInCommentX = _commentHelper.GetDateInComment(x);
+            var dateInCommentY = _commentHelper.GetDateInComment(y);
+
+            return dateInCommentX > dateInCommentY ? 1 : -1;
         }
     }
 }
