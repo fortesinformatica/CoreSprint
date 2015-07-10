@@ -1,6 +1,6 @@
-using CoreSprint.CoreSpreadsheet;
-using CoreSprint.CoreTrello;
 using CoreSprint.Helpers;
+using CoreSprint.Spreadsheet;
+using CoreSprint.Trello;
 
 namespace CoreSprint.Factory
 {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using CoreSprint.CoreSpreadsheet;
-using CoreSprint.CoreTrello;
+using System.Linq;
+using System.Threading;
 using CoreSprint.Factory;
 using CoreSprint.Integration;
 
@@ -11,29 +11,56 @@ namespace CoreSprint
     {
         static void Main(string[] args)
         {
-            ConfigureRemoteIntegrations();
+            var commandList = GetCommandList(CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId, args);
 
-            const string trelloBoardId = "x3EGx2MZ";
-            const string spreadsheetId = "1iI6EG4sDnkGSPtuqs8NILoiad1QqzVPq8j-HAHjZxaQ";
-
-            var sprintFactory = new CoreSprintFactory();
-            var commandList = new List<ICommand>
-            {
-                new CurrentSprint(sprintFactory, trelloBoardId, spreadsheetId),
-                new ListSprintCards(sprintFactory, trelloBoardId, spreadsheetId)
-            };
-
-            commandList.ForEach(c => c.Execute());
+            Execute(commandList, args);
         }
 
-        private static void ConfigureRemoteIntegrations()
+        private static List<ICommand> GetCommandList(string trelloBoardId, string spreadsheetId, string[] args)
         {
-            if (!TrelloConfiguration.HasConfiguration())
-                TrelloConfiguration.Configure();
-            Console.WriteLine();
-            if (!SpreadsheetConfiguration.HasConfiguration())
-                SpreadsheetConfiguration.Configure();
-            Console.WriteLine();
+            var sprintFactory = new CoreSprintFactory();
+            var commandList = new List<ICommand>();
+
+            if (args.ToList().Contains("CurrentSprint"))
+                commandList.Add(new CurrentSprint(sprintFactory, trelloBoardId, spreadsheetId));
+            
+            if (args.ToList().Contains("ListSprintCards"))
+                commandList.Add(new ListSprintCards(sprintFactory, trelloBoardId, spreadsheetId));
+            
+            if (args.ToList().Contains("TelegramAlerts"))
+                commandList.Add(new TelegramAlerts(sprintFactory));
+
+            return commandList;
+        }
+
+        private static void Execute(List<ICommand> commandList, IEnumerable<string> args)
+        {
+            const int minutes = 5;
+            if (args.ToList().Contains("--nostop"))
+            {
+                while (true)
+                {
+                    ExecuteCommands(commandList);
+                    Thread.Sleep(minutes * 1000);
+                }
+            }
+
+            ExecuteCommands(commandList);
+        }
+
+        private static void ExecuteCommands(List<ICommand> commandList)
+        {
+            commandList.ForEach(c =>
+            {
+                try
+                {
+                    c.Execute();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Erro: {0}", e.Message);
+                }
+            });
         }
     }
 }

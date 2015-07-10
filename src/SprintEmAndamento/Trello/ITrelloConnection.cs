@@ -1,6 +1,6 @@
 ﻿using TrelloNet;
 
-namespace CoreSprint.CoreTrello
+namespace CoreSprint.Trello
 {
     public interface ITrelloConnection
     {

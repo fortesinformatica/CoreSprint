@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
-using CoreSprint.CoreTrello;
+using CoreSprint.Trello;
 using TrelloNet;
 
 namespace CoreSprint.Helpers

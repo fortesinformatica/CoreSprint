@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.GData.Spreadsheets;
 
-namespace CoreSprint.CoreSpreadsheet
+namespace CoreSprint.Spreadsheet
 {
     public class SpreadsheetFacade : ISpreadsheetFacade
     {

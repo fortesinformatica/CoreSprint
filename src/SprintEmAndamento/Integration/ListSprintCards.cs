@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using CoreSprint.CoreSpreadsheet;
-using CoreSprint.CoreTrello;
 using CoreSprint.Factory;
 using CoreSprint.Helpers;
+using CoreSprint.Spreadsheet;
+using CoreSprint.Trello;
 using Google.GData.Spreadsheets;
 using TrelloNet;
 
@@ -32,7 +32,9 @@ namespace CoreSprint.Integration
 
         public void Execute()
         {
+            CoreSprintApp.ConfigureRemoteIntegrations();
             const string worksheetName = "ListaDeCartoes";
+
             var worksheet = _worksheetHelper.RedoWorksheet(_spreadsheetId, worksheetName, GetHeadersName());
             CopyCardsToSpreadsheet(worksheet);
         }

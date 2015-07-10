@@ -1,6 +1,6 @@
 ﻿using Google.GData.Spreadsheets;
 
-namespace CoreSprint.CoreSpreadsheet
+namespace CoreSprint.Spreadsheet
 {
     public interface ISpreadsheetConnection
     {

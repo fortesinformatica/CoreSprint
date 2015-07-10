@@ -1,0 +1,1 @@
+deploy\CoreSprint.Debug\CoreSprint\CoreSprint.exe --nostop CurrentSprint

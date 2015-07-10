@@ -5,13 +5,12 @@ using CoreSprint.BrowserInstrumentation;
 using DialectSoftware.Web.HtmlAgilityPack;
 using TrelloNet;
 
-namespace CoreSprint.CoreTrello
+namespace CoreSprint.Trello
 {
     public static class TrelloConfiguration
     {
         private const string TRELLO_APP_KEY_URL = "https://trello.com/app-key";
         private const string TRELLO_LOGIN_URL = "https://trello.com/login";
-        private static string _trelloConfig = "c:\\temp\\trello.config";
         private static bool navigated = false;
 
 
@@ -23,13 +22,13 @@ namespace CoreSprint.CoreTrello
             {
                 appKey = GetAppKey(browser);
 
-                var trello = new Trello(appKey);
-                var urlUserToken = trello.GetAuthorizationUrl(Constants.TrelloAppName, Scope.ReadOnly, Expiration.Never);
+                var trello = new TrelloNet.Trello(appKey);
+                var urlUserToken = trello.GetAuthorizationUrl(CoreSprintApp.TrelloAppName, Scope.ReadOnly, Expiration.Never);
 
                 userToken = GetUserToken(browser, urlUserToken);
             }
 
-            File.WriteAllLines(_trelloConfig, new List<string> { appKey, userToken });
+            File.WriteAllLines(CoreSprintApp.TrelloConfigPath, new List<string> { appKey, userToken });
             Console.WriteLine("\r\nConfiguração do Trello finalizada!");
         }
 
@@ -43,7 +42,7 @@ namespace CoreSprint.CoreTrello
         {
             if (HasConfiguration())
             {
-                var configLines = File.ReadAllLines(_trelloConfig);
+                var configLines = File.ReadAllLines(CoreSprintApp.TrelloConfigPath);
                 return new Dictionary<string, string> { { "appKey", configLines[0].Trim() }, { "userToken", configLines[1].Trim() } };
             }
             throw new Exception("Você ainda não configurou a integração com o Trello.");
@@ -51,16 +50,16 @@ namespace CoreSprint.CoreTrello
 
         public static bool HasConfiguration()
         {
-            if (File.Exists(_trelloConfig))
+            if (File.Exists(CoreSprintApp.TrelloConfigPath))
             {
-                var configLines = File.ReadAllLines(_trelloConfig);
+                var configLines = File.ReadAllLines(CoreSprintApp.TrelloConfigPath);
                 var hasTwoLines = configLines.Length > 1;
 
                 if (hasTwoLines)
                 {
                     try
                     {
-                        var trello = new Trello(configLines[0]);
+                        var trello = new TrelloNet.Trello(configLines[0]);
                         trello.Authorize(configLines[1]);
                         trello.Members.Me();
                         return true;

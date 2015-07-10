@@ -58,8 +58,12 @@
       <HintPath>..\..\packages\DialectSoftware.Web.1.0.1\lib\Microsoft.mshtml.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="NetTelegramBotApi, Version=3.3.50701.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NetTelegramBotApi.3.3.50701.0\lib\net45\NetTelegramBotApi.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="RestSharp, Version=105.0.1.0, Culture=neutral, processorArchitecture=MSIL">
@@ -82,11 +86,15 @@
     <Compile Include="BrowserInstrumentation\BrowserDataRetriever.cs" />
     <Compile Include="BrowserInstrumentation\BrowserStep.cs" />
     <Compile Include="BrowserInstrumentation\IBrowserDataRetriever.cs" />
-    <Compile Include="Constants.cs" />
-    <Compile Include="CoreSpreadsheet\ISpreadsheetConnection.cs" />
-    <Compile Include="CoreSpreadsheet\ISpreadsheetFacade.cs" />
-    <Compile Include="CoreTrello\ITrelloConnection.cs" />
-    <Compile Include="CoreTrello\ITrelloFacade.cs" />
+    <Compile Include="CoreSprintApp.cs" />
+    <Compile Include="Integration\TelegramCommands\CurrentSprintReport.cs" />
+    <Compile Include="Integration\TelegramAlerts.cs" />
+    <Compile Include="Integration\TelegramCommands\ITelegramCommand.cs" />
+    <Compile Include="Spreadsheet\ISpreadsheetConnection.cs" />
+    <Compile Include="Spreadsheet\ISpreadsheetFacade.cs" />
+    <Compile Include="Telegram\TelegramConfiguration.cs" />
+    <Compile Include="Trello\ITrelloConnection.cs" />
+    <Compile Include="Trello\ITrelloFacade.cs" />
     <Compile Include="Helpers\CardHelper.cs" />
     <Compile Include="Helpers\CommentHelper.cs" />
     <Compile Include="Helpers\ICardHelper.cs" />
@@ -98,12 +106,12 @@
     <Compile Include="Integration\ListSprintCards.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CoreSpreadsheet\SpreadsheetConfiguration.cs" />
-    <Compile Include="CoreSpreadsheet\SpreadsheetConnection.cs" />
-    <Compile Include="CoreSpreadsheet\SpreadsheetFacade.cs" />
-    <Compile Include="CoreTrello\TrelloConfiguration.cs" />
-    <Compile Include="CoreTrello\TrelloFacade.cs" />
-    <Compile Include="CoreTrello\TrelloConnection.cs" />
+    <Compile Include="Spreadsheet\SpreadsheetConfiguration.cs" />
+    <Compile Include="Spreadsheet\SpreadsheetConnection.cs" />
+    <Compile Include="Spreadsheet\SpreadsheetFacade.cs" />
+    <Compile Include="Trello\TrelloConfiguration.cs" />
+    <Compile Include="Trello\TrelloFacade.cs" />
+    <Compile Include="Trello\TrelloConnection.cs" />
     <Compile Include="Factory\CoreSprintFactory.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -129,38 +137,38 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-    <PropertyGroup>
-        <TempFolderName>$(AssemblyName).$(Configuration)</TempFolderName>
-        <DeployFolder>..\..\deploy\</DeployFolder>
-    </PropertyGroup>
-    <Target Name="AfterBuild" Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-        <CallTarget Targets="ExcluirPastaTemp" />
-        <CallTarget Targets="ExcluirPacoteZip" />
-        <CallTarget Targets="CriarPastaTemp" />
-        <CallTarget Targets="CopyFiles" />
-        <CallTarget Targets="CreateZipFile" />
-        <CallTarget Targets="ExcluirPastaTemp" />
-    </Target>
-    <Target Name="ExcluirPastaTemp" Condition="Exists('$(DeployFolder)$(TempFolderName)')">
-        <Delete Files="$(DeployFolder)$(TempFolderName)\*.*" ContinueOnError="true" />
-        <RemoveDir Directories="$(DeployFolder)$(TempFolderName)" ContinueOnError="true" />
-    </Target>
-    <Target Name="ExcluirPacoteZip">
-        <Delete Files="$(DeployFolder)$(AssemblyName).$(Configuration).zip" ContinueOnError="true" />
-    </Target>
-    <Target Name="CriarPastaTemp">
-        <MakeDir Directories="$(DeployFolder)$(TempFolderName)\$(AssemblyName)" />
-    </Target>
+  <PropertyGroup>
+    <TempFolderName>$(AssemblyName).$(Configuration)</TempFolderName>
+    <DeployFolder>..\..\deploy\</DeployFolder>
+  </PropertyGroup>
+  <Target Name="AfterBuild">
+    <CallTarget Targets="ExcluirPastaTemp" />
+    <CallTarget Targets="ExcluirPacoteZip" />
+    <CallTarget Targets="CriarPastaTemp" />
+    <CallTarget Targets="CopyFiles" />
+    <CallTarget Targets="CreateZipFile" />
+    <!-- <CallTarget Targets="ExcluirPastaTemp" /> -->
+  </Target>
+  <Target Name="ExcluirPastaTemp" Condition="Exists('$(DeployFolder)$(TempFolderName)')">
+    <Delete Files="$(DeployFolder)$(TempFolderName)\*.*" ContinueOnError="true" />
+    <RemoveDir Directories="$(DeployFolder)$(TempFolderName)" ContinueOnError="true" />
+  </Target>
+  <Target Name="ExcluirPacoteZip">
+    <Delete Files="$(DeployFolder)$(AssemblyName).$(Configuration).zip" ContinueOnError="true" />
+  </Target>
+  <Target Name="CriarPastaTemp">
+    <MakeDir Directories="$(DeployFolder)$(TempFolderName)\$(AssemblyName)" />
+  </Target>
+  <ItemGroup>
+    <SourceFiles Include="$(OutputPath)\**\*.*" />
+  </ItemGroup>
+  <Target Name="CopyFiles">
+    <Copy SourceFiles="@(SourceFiles)" DestinationFolder="$(DeployFolder)$(TempFolderName)\$(AssemblyName)" />
+  </Target>
+  <Target Name="CreateZipFile">
     <ItemGroup>
-        <SourceFiles Include="$(OutputPath)\**\*.*" />
+      <DebugApplicationFiles Include="$(DeployFolder)$(TempFolderName)\$(AssemblyName)\**\*.*" />
     </ItemGroup>
-    <Target Name="CopyFiles">
-        <Copy SourceFiles="@(SourceFiles)" DestinationFolder="$(DeployFolder)$(TempFolderName)\$(AssemblyName)" />
-    </Target>
-    <Target Name="CreateZipFile">
-        <ItemGroup>
-            <DebugApplicationFiles Include="$(DeployFolder)$(TempFolderName)\$(AssemblyName)\**\*.*" />
-        </ItemGroup>
-        <Zip Files="@(DebugApplicationFiles)" WorkingDirectory="$(DeployFolder)$(TempFolderName)" ZipFileName="$(DeployFolder)$(AssemblyName).$(Configuration).zip" ZipLevel="9" />
-    </Target>
+    <Zip Files="@(DebugApplicationFiles)" WorkingDirectory="$(DeployFolder)$(TempFolderName)" ZipFileName="$(DeployFolder)$(AssemblyName).$(Configuration).zip" ZipLevel="9" />
+  </Target>
 </Project>

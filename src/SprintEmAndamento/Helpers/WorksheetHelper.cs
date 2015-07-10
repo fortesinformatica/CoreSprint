@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using CoreSprint.CoreSpreadsheet;
+using CoreSprint.Spreadsheet;
 using Google.GData.Spreadsheets;
 
 namespace CoreSprint.Helpers

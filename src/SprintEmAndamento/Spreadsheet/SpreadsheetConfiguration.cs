@@ -10,12 +10,10 @@ using Google.GData.Spreadsheets;
 using mshtml;
 using SHDocVw;
 
-namespace CoreSprint.CoreSpreadsheet
+namespace CoreSprint.Spreadsheet
 {
     public static class SpreadsheetConfiguration
     {
-        private static string _trelloConfig = "c:\\temp\\spreadsheet.config";
-
         public static string ClientId { get; set; }
         public static string ClientSecret { get; set; }
         public static string Scope { get; set; }
@@ -33,7 +31,7 @@ namespace CoreSprint.CoreSpreadsheet
             var parameters = GetParameters();
             var requestOk = false;
 
-            if (File.Exists(_trelloConfig))
+            if (File.Exists(CoreSprintApp.SpreadsheetConfigPath))
             {
                 var configuration = GetConfiguration();
                 parameters.RefreshToken = configuration["refreshToken"];
@@ -49,7 +47,7 @@ namespace CoreSprint.CoreSpreadsheet
                 OAuthUtil.GetAccessToken(parameters);
             }
 
-            File.WriteAllLines(_trelloConfig, new List<string> { parameters.AccessToken, parameters.RefreshToken });
+            File.WriteAllLines(CoreSprintApp.SpreadsheetConfigPath, new List<string> { parameters.AccessToken, parameters.RefreshToken });
             Console.WriteLine("\r\nConfiguração do Google Planilhas finalizada!");
         }
 
@@ -98,9 +96,9 @@ namespace CoreSprint.CoreSpreadsheet
 
         public static Dictionary<string, string> GetConfiguration()
         {
-            if (File.Exists(_trelloConfig))
+            if (File.Exists(CoreSprintApp.SpreadsheetConfigPath))
             {
-                var configLines = File.ReadAllLines(_trelloConfig);
+                var configLines = File.ReadAllLines(CoreSprintApp.SpreadsheetConfigPath);
                 return new Dictionary<string, string> { { "accessToken", configLines[0] }, { "refreshToken", configLines[1] } };
             }
             throw new Exception("Você ainda não configurou a integração com o Google Planilhas.");
@@ -108,9 +106,9 @@ namespace CoreSprint.CoreSpreadsheet
 
         public static bool HasConfiguration()
         {
-            if (File.Exists(_trelloConfig))
+            if (File.Exists(CoreSprintApp.SpreadsheetConfigPath))
             {
-                var configLines = File.ReadAllLines(_trelloConfig);
+                var configLines = File.ReadAllLines(CoreSprintApp.SpreadsheetConfigPath);
                 var hasThreeLines = configLines.Length > 2;
                 var parameters = GetParameters();
 
@@ -127,9 +125,9 @@ namespace CoreSprint.CoreSpreadsheet
         {
             try
             {
-                var spreadsheetService = new SpreadsheetsService(Constants.GoogleApiAppName)
+                var spreadsheetService = new SpreadsheetsService(CoreSprintApp.GoogleApiAppName)
                 {
-                    RequestFactory = new GOAuth2RequestFactory(null, Constants.GoogleApiAppName, parameters)
+                    RequestFactory = new GOAuth2RequestFactory(null, CoreSprintApp.GoogleApiAppName, parameters)
                 };
 
                 var spreadsheetQuery = new SpreadsheetQuery();

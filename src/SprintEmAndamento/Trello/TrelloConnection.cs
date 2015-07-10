@@ -1,6 +1,6 @@
 ﻿using TrelloNet;
 
-namespace CoreSprint.CoreTrello
+namespace CoreSprint.Trello
 {
     public class TrelloConnection : ITrelloConnection
     {
@@ -21,7 +21,7 @@ namespace CoreSprint.CoreTrello
         {
             //TODO: tratar caso de appKey ou userToken inválido
 
-            Trello = Trello ?? new Trello(appKey);
+            Trello = Trello ?? new TrelloNet.Trello(appKey);
             Trello.Authorize(userToken);
         }
     }

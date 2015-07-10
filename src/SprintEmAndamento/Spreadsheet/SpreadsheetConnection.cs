@@ -1,7 +1,7 @@
 ﻿using Google.GData.Client;
 using Google.GData.Spreadsheets;
 
-namespace CoreSprint.CoreSpreadsheet
+namespace CoreSprint.Spreadsheet
 {
     public class SpreadsheetConnection : ISpreadsheetConnection
     {
@@ -24,9 +24,9 @@ namespace CoreSprint.CoreSpreadsheet
                 AccessToken = userToken
             };
 
-            SpreadsheetService = new SpreadsheetsService(Constants.GoogleApiAppName)
+            SpreadsheetService = new SpreadsheetsService(CoreSprintApp.GoogleApiAppName)
             {
-                RequestFactory = new GOAuth2RequestFactory(null, Constants.GoogleApiAppName, parameters)
+                RequestFactory = new GOAuth2RequestFactory(null, CoreSprintApp.GoogleApiAppName, parameters)
             };
         }
     }
