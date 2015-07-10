@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <Import Project="_build\MSBuild.Community.Tasks.Targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -128,4 +129,38 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+    <PropertyGroup>
+        <TempFolderName>$(AssemblyName).$(Configuration)</TempFolderName>
+        <DeployFolder>..\..\deploy\</DeployFolder>
+    </PropertyGroup>
+    <Target Name="AfterBuild" Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+        <CallTarget Targets="ExcluirPastaTemp" />
+        <CallTarget Targets="ExcluirPacoteZip" />
+        <CallTarget Targets="CriarPastaTemp" />
+        <CallTarget Targets="CopyFiles" />
+        <CallTarget Targets="CreateZipFile" />
+        <CallTarget Targets="ExcluirPastaTemp" />
+    </Target>
+    <Target Name="ExcluirPastaTemp" Condition="Exists('$(DeployFolder)$(TempFolderName)')">
+        <Delete Files="$(DeployFolder)$(TempFolderName)\*.*" ContinueOnError="true" />
+        <RemoveDir Directories="$(DeployFolder)$(TempFolderName)" ContinueOnError="true" />
+    </Target>
+    <Target Name="ExcluirPacoteZip">
+        <Delete Files="$(DeployFolder)$(AssemblyName).$(Configuration).zip" ContinueOnError="true" />
+    </Target>
+    <Target Name="CriarPastaTemp">
+        <MakeDir Directories="$(DeployFolder)$(TempFolderName)\$(AssemblyName)" />
+    </Target>
+    <ItemGroup>
+        <SourceFiles Include="$(OutputPath)\**\*.*" />
+    </ItemGroup>
+    <Target Name="CopyFiles">
+        <Copy SourceFiles="@(SourceFiles)" DestinationFolder="$(DeployFolder)$(TempFolderName)\$(AssemblyName)" />
+    </Target>
+    <Target Name="CreateZipFile">
+        <ItemGroup>
+            <DebugApplicationFiles Include="$(DeployFolder)$(TempFolderName)\$(AssemblyName)\**\*.*" />
+        </ItemGroup>
+        <Zip Files="@(DebugApplicationFiles)" WorkingDirectory="$(DeployFolder)$(TempFolderName)" ZipFileName="$(DeployFolder)$(AssemblyName).$(Configuration).zip" ZipLevel="9" />
+    </Target>
 </Project>
