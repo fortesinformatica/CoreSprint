@@ -35,11 +35,10 @@ namespace CoreSprint.Telegram
         public static Dictionary<string, string> GetConfiguration()
         {
             if (HasConfiguration())
-            {
-                var configLines = File.ReadAllLines(CoreSprintApp.TelegramConfigPath);
-                return new Dictionary<string, string> { { "botToken", configLines[0].Trim() } };
-            }
-            throw new Exception("Você ainda não configurou a integração com o Telegram.");
+                Configure();
+
+            var configLines = File.ReadAllLines(CoreSprintApp.TelegramConfigPath);
+            return new Dictionary<string, string> { { "botToken", configLines[0].Trim() } };
         }
     }
 }

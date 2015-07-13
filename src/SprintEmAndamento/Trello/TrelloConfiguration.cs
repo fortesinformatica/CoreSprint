@@ -40,12 +40,11 @@ namespace CoreSprint.Trello
 
         public static Dictionary<string, string> GetConfiguration()
         {
-            if (HasConfiguration())
-            {
-                var configLines = File.ReadAllLines(CoreSprintApp.TrelloConfigPath);
-                return new Dictionary<string, string> { { "appKey", configLines[0].Trim() }, { "userToken", configLines[1].Trim() } };
-            }
-            throw new Exception("Você ainda não configurou a integração com o Trello.");
+            if (!HasConfiguration())
+                Configure();
+
+            var configLines = File.ReadAllLines(CoreSprintApp.TrelloConfigPath);
+            return new Dictionary<string, string> { { "appKey", configLines[0].Trim() }, { "userToken", configLines[1].Trim() } };
         }
 
         public static bool HasConfiguration()

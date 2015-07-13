@@ -96,12 +96,11 @@ namespace CoreSprint.Spreadsheet
 
         public static Dictionary<string, string> GetConfiguration()
         {
-            if (File.Exists(CoreSprintApp.SpreadsheetConfigPath))
-            {
-                var configLines = File.ReadAllLines(CoreSprintApp.SpreadsheetConfigPath);
-                return new Dictionary<string, string> { { "accessToken", configLines[0] }, { "refreshToken", configLines[1] } };
-            }
-            throw new Exception("Você ainda não configurou a integração com o Google Planilhas.");
+            if (!File.Exists(CoreSprintApp.SpreadsheetConfigPath))
+                Configure();
+
+            var configLines = File.ReadAllLines(CoreSprintApp.SpreadsheetConfigPath);
+            return new Dictionary<string, string> { { "accessToken", configLines[0] }, { "refreshToken", configLines[1] } };
         }
 
         public static bool HasConfiguration()
