@@ -47,7 +47,7 @@ namespace CoreSprint.Integration
 
             var startDate = Convert.ToDateTime(strStartDate, dateFormat);
             var endDate = Convert.ToDateTime(strEndDate, dateFormat);
-            var firstColumn = _spreadsheetFacade.GetCellValue(worksheet, 1, uint.MaxValue, 1, 1).ToList();
+            var firstColumn = _spreadsheetFacade.GetCellsValues(worksheet, 1, uint.MaxValue, 1, 1).ToList();
             var sprintPlanningPos = GetSprintPlanningPositions(firstColumn);
             var sprintRunningPos = GetSprintRunningPositions(firstColumn);
             var sprintAllocationByLabelsPos = GetSprintAllocationByLabelsPositions(firstColumn);

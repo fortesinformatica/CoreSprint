@@ -84,11 +84,11 @@ namespace CoreSprint.Spreadsheet
 
         public string GetCellValue(WorksheetEntry worksheet, uint row, uint col)
         {
-            var cellEntry = GetCellValue(worksheet, row, row, col, col).FirstOrDefault();
+            var cellEntry = GetCellsValues(worksheet, row, row, col, col).FirstOrDefault();
             return cellEntry != null ? cellEntry.InputValue : "";
         }
 
-        public IEnumerable<CellEntry> GetCellValue(WorksheetEntry worksheet, uint minrow, uint maxrow, uint mincol, uint maxcol)
+        public IEnumerable<CellEntry> GetCellsValues(WorksheetEntry worksheet, uint minrow, uint maxrow, uint mincol, uint maxcol)
         {
             var cellQuery = new CellQuery(worksheet.CellFeedLink)
             {

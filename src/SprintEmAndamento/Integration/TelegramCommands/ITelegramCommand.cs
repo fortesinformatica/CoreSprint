@@ -1,7 +1,9 @@
+using NetTelegramBotApi.Types;
+
 namespace CoreSprint.Integration.TelegramCommands
 {
     public interface ITelegramCommand
     {
-        void Execute(long chatId);
+        void Execute(Message message);
     }
 }

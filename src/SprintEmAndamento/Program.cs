@@ -35,13 +35,13 @@ namespace CoreSprint
 
         private static void Execute(List<ICommand> commandList, IEnumerable<string> args)
         {
-            const int minutes = 5;
+            const int seconds = 5;
             if (args.ToList().Contains("--nostop"))
             {
                 while (true)
                 {
                     ExecuteCommands(commandList);
-                    Thread.Sleep(minutes * 1000);
+                    Thread.Sleep(seconds * 1000);
                 }
             }
 

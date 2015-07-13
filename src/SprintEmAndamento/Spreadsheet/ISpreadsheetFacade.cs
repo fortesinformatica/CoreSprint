@@ -15,7 +15,7 @@ namespace CoreSprint.Spreadsheet
         void CreateHeader(WorksheetEntry worksheet, IList<string> cellHeaders);
         void InsertInWorksheet(WorksheetEntry worksheet, ListEntry row);
         string GetCellValue(WorksheetEntry worksheet, uint row, uint col);
-        IEnumerable<CellEntry> GetCellValue(WorksheetEntry worksheet, uint minrow, uint maxrow, uint mincol, uint maxcol);
+        IEnumerable<CellEntry> GetCellsValues(WorksheetEntry worksheet, uint minrow, uint maxrow, uint mincol, uint maxcol);
         void SaveToCell(WorksheetEntry worksheet, uint row, uint col, string value);
     }
 }

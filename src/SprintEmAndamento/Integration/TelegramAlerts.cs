@@ -18,7 +18,7 @@ namespace CoreSprint.Integration
         public TelegramAlerts(CoreSprintFactory sprintFactory)
         {
             _sprintFactory = sprintFactory;
-            
+
             if (!TelegramConfiguration.HasConfiguration())
                 TelegramConfiguration.Configure();
 
@@ -43,13 +43,13 @@ namespace CoreSprint.Integration
             foreach (var update in updates)
             {
                 SetLastUpdateId(update.UpdateId);
-                
+
                 foreach (var userCommand in _telegramCommands.Keys)
                 {
                     if (update.Message.Text.Trim().StartsWith(userCommand))
                     {
                         var command = _telegramCommands[userCommand];
-                        command.Execute(update.Message.Chat.Id);
+                        command.Execute(update.Message);
                     }
                 }
             }
