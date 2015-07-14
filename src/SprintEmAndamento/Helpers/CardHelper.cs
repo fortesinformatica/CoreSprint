@@ -160,9 +160,8 @@ namespace CoreSprint.Helpers
             var strRemainder = _numberPattern.Match(cardEstimate).Value;
             var remainder = double.Parse(string.IsNullOrWhiteSpace(strRemainder) ? "0" : strRemainder, cultureInfo);
             var worked = 0D;
-            
-            var workStarted = false;
-            var dateTimeWorkStarted = default(DateTime);
+
+            var workedControl = new Dictionary<string, DateTime>();
 
             var sortComparer = new CommentSortComparer(_commentHelper);
             var commentCardActions = comments as IList<CommentCardAction> ?? comments.ToList();
@@ -173,7 +172,7 @@ namespace CoreSprint.Helpers
 
             foreach (var comment in commentCardActions.Where(comment => validateComment == null || validateComment(comment)))
             {
-                worked += CalculateRunningWorked(comment, ref workStarted, ref dateTimeWorkStarted);
+                worked += CalculateRunningWorked(comment, workedControl);
                 worked += CalculateWorkedAndReminder(comment, cultureInfo, ref remainder);
             }
 
@@ -203,25 +202,24 @@ namespace CoreSprint.Helpers
             return worked;
         }
 
-        private double CalculateRunningWorked(CommentCardAction comment, ref bool workStarted, ref DateTime dateTimeWorkStarted)
+        private double CalculateRunningWorked(CommentCardAction comment, IDictionary<string, DateTime> workedControl)
         {
             double runningWorked = 0;
             var matchStartedWork = _startWorkPattern.Match(comment.Data.Text);
 
             if (matchStartedWork.Success)
-            {
-                workStarted = true;
-                dateTimeWorkStarted = _commentHelper.GetDateInComment(comment);
-            }
+                workedControl[comment.IdMemberCreator] = _commentHelper.GetDateInComment(comment);
 
-            if (workStarted)
+            if (workedControl.ContainsKey(comment.IdMemberCreator))
             {
                 var matchStopedWork = _stopWorkPattern.Match(comment.Data.Text);
                 if (matchStopedWork.Success)
                 {
+                    var dateTimeWorkStarted = workedControl[comment.IdMemberCreator];
                     var workRunning = _commentHelper.GetDateInComment(comment) - dateTimeWorkStarted;
                     runningWorked += workRunning.TotalHours > 0 ? workRunning.TotalHours : 0;
-                    workStarted = false;
+
+                    workedControl.Remove(comment.IdMemberCreator);
                 }
             }
             return runningWorked;

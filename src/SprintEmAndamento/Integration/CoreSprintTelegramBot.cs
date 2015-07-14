@@ -60,12 +60,9 @@ namespace CoreSprint.Integration
                         }
                         catch (Exception e)
                         {
-                            var msgError = string.Format("Ocorreu um erro ao executar o comando: {0}", e.Message);
+                            var msgError = string.Format("Ocorreu um erro ao executar o comando: {0}\r\n{1}", e.Message, e.StackTrace);
                             Console.WriteLine(msgError);
                             command.SendToChat(update.Message.Chat.Id, msgError);
-
-                            if (e.Message.Contains("//spreadsheets.google.com"))
-                                SpreadsheetConfiguration.Configure();
                         }
                     }
                 }
