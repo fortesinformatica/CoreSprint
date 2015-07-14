@@ -93,6 +93,7 @@
     <Compile Include="Integration\CoreSprintTelegramBot.cs" />
     <Compile Include="Integration\TelegramCommands\ITelegramCommand.cs" />
     <Compile Include="Integration\TelegramCommands\TelegramCurrentSprintUpdate.cs" />
+    <Compile Include="Integration\TelegramCommands\TelegramListSprintCards.cs" />
     <Compile Include="Spreadsheet\ISpreadsheetConnection.cs" />
     <Compile Include="Spreadsheet\ISpreadsheetFacade.cs" />
     <Compile Include="Telegram\TelegramConfiguration.cs" />

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using CoreSprint.Factory;
 using CoreSprint.Integration.TelegramCommands;
+using CoreSprint.Spreadsheet;
 using CoreSprint.Telegram;
 using NetTelegramBotApi.Requests;
 using NetTelegramBotApi.Types;
@@ -26,10 +27,16 @@ namespace CoreSprint.Integration
 
             _telegramBot = new NetTelegramBotApi.TelegramBot(telegramBotToken);
 
+            /*
+             * sprint_report - Relatório do sprint atual com horas trabalhadas e pendentes por profissional
+             * sprint_update - Atualiza planilha do sprint atual com as informações do quadro de Sprint do Trello
+             * sprint_list_cards - Atualiza lista de cartões do Trello na planilha do sprint atual
+             */
             _telegramCommands = new Dictionary<string, ITelegramCommand>
             {
                 {"/sprint_report", new TelegramCurrentSprintReport(_telegramBot, _sprintFactory, CoreSprintApp.SpreadsheetId)},
-                {"/sprint_update", new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)}
+                {"/sprint_update", new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
+                {"/sprint_list_cards", new TelegramListSprintCards(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)}
             };
         }
 
@@ -56,6 +63,9 @@ namespace CoreSprint.Integration
                             var msgError = string.Format("Ocorreu um erro ao executar o comando: {0}", e.Message);
                             Console.WriteLine(msgError);
                             command.SendToChat(update.Message.Chat.Id, msgError);
+
+                            if (e.Message.Contains("//spreadsheets.google.com"))
+                                SpreadsheetConfiguration.Configure();
                         }
                     }
                 }

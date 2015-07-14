@@ -39,7 +39,7 @@ namespace CoreSprint
             const int seconds = 0;
             const int miliseconds = 0;
 #else
-            const int seconds = 5;
+            const int seconds = 2;
             const int miliseconds = 1000;
 #endif
             if (args.ToList().Contains("--nostop"))

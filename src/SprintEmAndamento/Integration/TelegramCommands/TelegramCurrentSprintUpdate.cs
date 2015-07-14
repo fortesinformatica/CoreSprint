@@ -10,14 +10,15 @@ namespace CoreSprint.Integration.TelegramCommands
     {
         private readonly CurrentSprintUpdate _currentSprintUpdate;
 
-        public TelegramCurrentSprintUpdate(TelegramBot telegramBot, ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId) : base(telegramBot)
+        public TelegramCurrentSprintUpdate(TelegramBot telegramBot, ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
+            : base(telegramBot)
         {
-            _currentSprintUpdate = new CurrentSprintUpdate(coreSprintFactory, trelloBoardId, spreadsheetId);
+            _currentSprintUpdate = new CurrentSprintUpdate(coreSprintFactory, trelloBoardId, spreadsheetId); //TODO: criar método no factory
         }
 
         public override void Execute(Message message)
         {
-            SendToChat(message.Chat.Id, "Processando quadro do trello e atualizando planilha do sprint...");
+            SendToChat(message.Chat.Id, "Vou processar o quadro do trello e atualizar a planilha. Assim que terminar aviso.");
             _currentSprintUpdate.Execute();
             SendToChat(message.Chat.Id, string.Format("Atualização da planilha do sprint concluída em {0}.", DateTime.Now.ToHumanReadable()));
         }
