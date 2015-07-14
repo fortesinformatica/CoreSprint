@@ -11,20 +11,18 @@ using NetTelegramBotApi.Types;
 
 namespace CoreSprint.Integration.TelegramCommands
 {
-    public class CurrentSprintReport : ITelegramCommand
+    public class TelegramCurrentSprintReport : TelegramCommand
     {
-        private readonly TelegramBot _telegramBot;
         private readonly string _spreadsheetId;
         private readonly ISpreadsheetFacade _spreadsheetFacade;
 
-        public CurrentSprintReport(TelegramBot telegramBot, ICoreSprintFactory factory, string spreadsheetId)
+        public TelegramCurrentSprintReport(TelegramBot telegramBot, ICoreSprintFactory factory, string spreadsheetId) : base(telegramBot)
         {
-            _telegramBot = telegramBot;
             _spreadsheetId = spreadsheetId;
             _spreadsheetFacade = factory.GetSpreadsheetFacade();
         }
 
-        public void Execute(Message message)
+        public override void Execute(Message message)
         {
             SpreadsheetConfiguration.Configure();
             Console.WriteLine("Consultando relatório do sprint corrente...");
@@ -38,15 +36,9 @@ namespace CoreSprint.Integration.TelegramCommands
 
             //TODO: deduzir linhas e colunas max e min ao invés de utilizar valores fixos
             var reportCells = _spreadsheetFacade.GetCellsValues(worksheet, 32, 38, 1, 7);
-            var stringBuffer = GetReport(reportCells, @params);
-            var sendMessage = new SendMessage(chatId, stringBuffer);
+            var messageResult = GetReport(reportCells, @params);
 
-            Console.WriteLine("Enviando mensagem para o chat...");
-            var result = _telegramBot.MakeRequestAsync(sendMessage).Result;
-
-            Console.WriteLine(result == null
-                ? "Erro: Não foi possível enviar a mensagem para o chat!"
-                : "Mensagem enviada!");
+            SendToChat(chatId, messageResult);
         }
 
         private static IEnumerable<string> GetParams(Message message)

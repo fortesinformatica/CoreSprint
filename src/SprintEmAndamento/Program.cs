@@ -21,27 +21,33 @@ namespace CoreSprint
             var sprintFactory = new CoreSprintFactory();
             var commandList = new List<ICommand>();
 
-            if (args.ToList().Contains("CurrentSprint"))
-                commandList.Add(new CurrentSprint(sprintFactory, trelloBoardId, spreadsheetId));
+            if (args.ToList().Contains("CurrentSprintUpdate"))
+                commandList.Add(new CurrentSprintUpdate(sprintFactory, trelloBoardId, spreadsheetId));
             
             if (args.ToList().Contains("ListSprintCards"))
                 commandList.Add(new ListSprintCards(sprintFactory, trelloBoardId, spreadsheetId));
             
-            if (args.ToList().Contains("TelegramAlerts"))
-                commandList.Add(new TelegramAlerts(sprintFactory));
+            if (args.ToList().Contains("TelegramBot"))
+                commandList.Add(new CoreSprintTelegramBot(sprintFactory));
 
             return commandList;
         }
 
         private static void Execute(List<ICommand> commandList, IEnumerable<string> args)
         {
+#if DEBUG //TODO: transformar em parâmetros do linha de comando
+            const int seconds = 0;
+            const int miliseconds = 0;
+#else
             const int seconds = 5;
+            const int miliseconds = 1000;
+#endif
             if (args.ToList().Contains("--nostop"))
             {
                 while (true)
                 {
                     ExecuteCommands(commandList);
-                    Thread.Sleep(seconds * 1000);
+                    Thread.Sleep(seconds * miliseconds);
                 }
             }
 

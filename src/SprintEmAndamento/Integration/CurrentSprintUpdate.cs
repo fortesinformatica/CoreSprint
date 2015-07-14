@@ -11,7 +11,7 @@ using TrelloNet;
 
 namespace CoreSprint.Integration
 {
-    public class CurrentSprint : ICommand
+    public class CurrentSprintUpdate : ICommand
     {
         private readonly string _trelloBoardId;
         private readonly string _spreadsheetId;
@@ -19,7 +19,7 @@ namespace CoreSprint.Integration
         private readonly ISpreadsheetFacade _spreadsheetFacade;
         private readonly ICardHelper _cardHelper;
 
-        public CurrentSprint(ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
+        public CurrentSprintUpdate(ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
         {
             _trelloBoardId = trelloBoardId;
             _spreadsheetId = spreadsheetId;

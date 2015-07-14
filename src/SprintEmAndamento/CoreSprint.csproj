@@ -87,9 +87,12 @@
     <Compile Include="BrowserInstrumentation\BrowserStep.cs" />
     <Compile Include="BrowserInstrumentation\IBrowserDataRetriever.cs" />
     <Compile Include="CoreSprintApp.cs" />
-    <Compile Include="Integration\TelegramCommands\CurrentSprintReport.cs" />
-    <Compile Include="Integration\TelegramAlerts.cs" />
+    <Compile Include="Extensions\DateTimeEx.cs" />
+    <Compile Include="Integration\TelegramCommands\TelegramCommand.cs" />
+    <Compile Include="Integration\TelegramCommands\TelegramCurrentSprintReport.cs" />
+    <Compile Include="Integration\CoreSprintTelegramBot.cs" />
     <Compile Include="Integration\TelegramCommands\ITelegramCommand.cs" />
+    <Compile Include="Integration\TelegramCommands\TelegramCurrentSprintUpdate.cs" />
     <Compile Include="Spreadsheet\ISpreadsheetConnection.cs" />
     <Compile Include="Spreadsheet\ISpreadsheetFacade.cs" />
     <Compile Include="Telegram\TelegramConfiguration.cs" />
@@ -101,7 +104,7 @@
     <Compile Include="Helpers\IWorksheetHelper.cs" />
     <Compile Include="Helpers\WorksheetHelper.cs" />
     <Compile Include="Factory\ICoreSprintFactory.cs" />
-    <Compile Include="Integration\CurrentSprint.cs" />
+    <Compile Include="Integration\CurrentSprintUpdate.cs" />
     <Compile Include="Integration\ICommand.cs" />
     <Compile Include="Integration\ListSprintCards.cs" />
     <Compile Include="Program.cs" />
