@@ -3,17 +3,25 @@ using System.Collections.Generic;
 using System.IO;
 using CoreSprint.Factory;
 using CoreSprint.Integration.TelegramCommands;
-using CoreSprint.Spreadsheet;
 using CoreSprint.Telegram;
+using NetTelegramBotApi;
 using NetTelegramBotApi.Requests;
 using NetTelegramBotApi.Types;
 
 namespace CoreSprint.Integration
 {
+    public class WorkExtract : ICommand
+    {
+        public void Execute()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public class CoreSprintTelegramBot : ICommand
     {
         private readonly CoreSprintFactory _sprintFactory;
-        private readonly NetTelegramBotApi.TelegramBot _telegramBot;
+        private readonly TelegramBot _telegramBot;
         private readonly Dictionary<string, ITelegramCommand> _telegramCommands;
 
         public CoreSprintTelegramBot(CoreSprintFactory sprintFactory)
@@ -25,7 +33,7 @@ namespace CoreSprint.Integration
 
             var telegramBotToken = TelegramConfiguration.GetConfiguration()["botToken"];
 
-            _telegramBot = new NetTelegramBotApi.TelegramBot(telegramBotToken);
+            _telegramBot = new TelegramBot(telegramBotToken);
 
             /*
              * sprint_report - Relatório do sprint atual com horas trabalhadas e pendentes por profissional

@@ -8,16 +8,14 @@ namespace CoreSprint.Telegram
     {
         public static void Configure()
         {
-            Console.WriteLine("Configurando integração com Telegram...");
-
             if (!File.Exists(CoreSprintApp.TelegramConfigPath))
             {
+                Console.WriteLine("Configurando integração com Telegram...");
                 Console.Write("Informe o token de acesso do BOT do Telegram CoreSprint_BOT: ");
                 var botToken = Console.ReadLine();
                 File.WriteAllLines(CoreSprintApp.TelegramConfigPath, new List<string> { botToken });
+                Console.WriteLine("\r\nConfiguração do Telegram finalizada!");
             }
-
-            Console.WriteLine("\r\nConfiguração do Telegram finalizada!");
         }
 
         public static bool HasConfiguration()

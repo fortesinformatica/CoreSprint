@@ -34,9 +34,14 @@ namespace CoreSprint.Spreadsheet
             if (File.Exists(CoreSprintApp.SpreadsheetConfigPath))
             {
                 var configuration = GetConfiguration();
+                parameters.AccessToken = configuration["accessToken"];
                 parameters.RefreshToken = configuration["refreshToken"];
-                OAuthUtil.RefreshAccessToken(parameters);
-                requestOk = TestRequest(parameters);
+
+                if (!TestRequest(parameters))
+                {
+                    OAuthUtil.RefreshAccessToken(parameters);
+                    requestOk = TestRequest(parameters);
+                }
             }
 
             if (!requestOk)
@@ -108,7 +113,7 @@ namespace CoreSprint.Spreadsheet
             if (File.Exists(CoreSprintApp.SpreadsheetConfigPath))
             {
                 var configLines = File.ReadAllLines(CoreSprintApp.SpreadsheetConfigPath);
-                var hasThreeLines = configLines.Length > 2;
+                var hasThreeLines = configLines.Length > 1;
                 var parameters = GetParameters();
 
                 parameters.AccessToken = configLines[0];
@@ -130,7 +135,8 @@ namespace CoreSprint.Spreadsheet
                 };
 
                 var spreadsheetQuery = new SpreadsheetQuery();
-                spreadsheetService.Query(spreadsheetQuery);
+                var spreadsheets = spreadsheetService.Query(spreadsheetQuery);
+                var spreadsheetEntry = spreadsheets.Entries.FirstOrDefault() as SpreadsheetEntry;
 
                 return true;
             }

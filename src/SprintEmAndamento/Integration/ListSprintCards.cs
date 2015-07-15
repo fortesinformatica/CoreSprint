@@ -32,7 +32,6 @@ namespace CoreSprint.Integration
 
         public void Execute()
         {
-            CoreSprintApp.ConfigureRemoteIntegrations();
             const string worksheetName = "ListaDeCartoes";
 
             var worksheet = _worksheetHelper.RedoWorksheet(_spreadsheetId, worksheetName, GetHeadersName());

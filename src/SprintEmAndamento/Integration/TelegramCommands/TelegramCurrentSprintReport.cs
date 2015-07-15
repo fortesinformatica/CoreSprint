@@ -24,7 +24,6 @@ namespace CoreSprint.Integration.TelegramCommands
 
         public override void Execute(Message message)
         {
-            SpreadsheetConfiguration.Configure();
             Console.WriteLine("Consultando relatório do sprint corrente...");
 
             const string worksheetName = "SprintCorrente";

@@ -19,10 +19,8 @@ namespace CoreSprint
         {
             if (!TrelloConfiguration.HasConfiguration())
                 TrelloConfiguration.Configure();
-            Console.WriteLine();
             if (!SpreadsheetConfiguration.HasConfiguration())
                 SpreadsheetConfiguration.Configure();
-            Console.WriteLine();
         }
     }
 }

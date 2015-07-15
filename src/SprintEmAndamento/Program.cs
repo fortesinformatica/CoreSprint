@@ -11,6 +11,8 @@ namespace CoreSprint
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Iniciado com os argumentos: {0}", string.Join(" ", args));
+
             var commandList = GetCommandList(CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId, args);
 
             Execute(commandList, args);
@@ -46,6 +48,7 @@ namespace CoreSprint
             {
                 while (true)
                 {
+                    CoreSprintApp.ConfigureRemoteIntegrations();
                     ExecuteCommands(commandList);
                     Thread.Sleep(seconds * miliseconds);
                 }
@@ -64,7 +67,7 @@ namespace CoreSprint
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Erro: {0}", e.Message);
+                    Console.WriteLine("Erro: {0}\r\n{1}", e.Message, e.StackTrace);
                 }
             });
         }

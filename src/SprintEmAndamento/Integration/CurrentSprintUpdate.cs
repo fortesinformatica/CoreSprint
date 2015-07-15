@@ -30,8 +30,6 @@ namespace CoreSprint.Integration
 
         public void Execute()
         {
-            CoreSprintApp.ConfigureRemoteIntegrations();
-
             const string worksheetName = "SprintCorrente";
 
             Console.WriteLine("Recuperando alocações dos profissionais...");
