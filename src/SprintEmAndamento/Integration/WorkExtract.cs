@@ -76,6 +76,7 @@ namespace CoreSprint.Integration
 
         private ListEntry MountWorksheetRow(CardWorkDto cardWork)
         {
+            var cultureInfoPtBr = new CultureInfo("pt-BR", false);
             var row = new ListEntry();
 
             row.Elements.Add(new ListEntry.Custom { LocalName = "profissional", Value = cardWork.Professional });
@@ -83,7 +84,7 @@ namespace CoreSprint.Integration
             row.Elements.Add(new ListEntry.Custom { LocalName = "linkcartao", Value = cardWork.CardLink });
             row.Elements.Add(new ListEntry.Custom { LocalName = "datacomentario", Value = cardWork.CommentAt.ToHumanReadable() });
             row.Elements.Add(new ListEntry.Custom { LocalName = "datahoratrabalho", Value = cardWork.WorkAt.ToHumanReadable() });
-            row.Elements.Add(new ListEntry.Custom { LocalName = "trabalhado", Value = cardWork.Worked.ToString(new CultureInfo("pt-BR", false)) });
+            row.Elements.Add(new ListEntry.Custom { LocalName = "trabalhado", Value = cardWork.Worked.ToString(cultureInfoPtBr) });
             row.Elements.Add(new ListEntry.Custom { LocalName = "comentario", Value = cardWork.Comment });
 
             return row;

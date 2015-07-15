@@ -14,7 +14,6 @@ namespace CoreSprint.Integration
     {
         private readonly CoreSprintFactory _sprintFactory;
         private readonly TelegramBot _telegramBot;
-        private readonly Dictionary<string, ITelegramCommand> _telegramCommands;
 
         public CoreSprintTelegramBot(CoreSprintFactory sprintFactory)
         {
@@ -26,14 +25,17 @@ namespace CoreSprint.Integration
             var telegramBotToken = TelegramConfiguration.GetConfiguration()["botToken"];
 
             _telegramBot = new TelegramBot(telegramBotToken);
+        }
 
+        private IDictionary<string, ITelegramCommand> GetCommands()
+        {
             /*
              * report - Relatório do sprint atual com horas trabalhadas e pendentes por profissional
              * update_report - Atualiza planilha do sprint atual com as informações do quadro de Sprint do Trello
              * update_cards_report - Atualiza lista de cartões do Trello na planilha do sprint atual
              * update_work_extract - Atualiza a planilha de horas trabalhadas com o extrato do sprint
              */
-            _telegramCommands = new Dictionary<string, ITelegramCommand>
+            return new Dictionary<string, ITelegramCommand>
             {
                 {"/report", new TelegramCurrentSprintReport(_telegramBot, _sprintFactory, CoreSprintApp.SpreadsheetId)},
                 {"/update_report", new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
@@ -49,13 +51,14 @@ namespace CoreSprint.Integration
 
             foreach (var update in updates)
             {
+                var telegramCommands = GetCommands();
                 SetLastUpdateId(update.UpdateId);
 
-                foreach (var userCommand in _telegramCommands.Keys)
+                foreach (var userCommand in telegramCommands.Keys)
                 {
                     if (update.Message.Text.ToLower().Trim().StartsWith(userCommand.Trim().ToLower()))
                     {
-                        var command = _telegramCommands[userCommand];
+                        var command = telegramCommands[userCommand];
                         try
                         {
                             command.Execute(update.Message);
