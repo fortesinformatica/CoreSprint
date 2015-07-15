@@ -37,11 +37,8 @@ namespace CoreSprint.Spreadsheet
                 parameters.AccessToken = configuration["accessToken"];
                 parameters.RefreshToken = configuration["refreshToken"];
 
-                if (!TestRequest(parameters))
-                {
-                    OAuthUtil.RefreshAccessToken(parameters);
-                    requestOk = TestRequest(parameters);
-                }
+                OAuthUtil.RefreshAccessToken(parameters);
+                requestOk = TestRequest(parameters);
             }
 
             if (!requestOk)

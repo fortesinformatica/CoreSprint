@@ -37,13 +37,9 @@ namespace CoreSprint
 
         private static void Execute(List<ICommand> commandList, IEnumerable<string> args)
         {
-#if DEBUG //TODO: transformar em parâmetros do linha de comando
-            const int seconds = 0;
-            const int miliseconds = 0;
-#else
             const int seconds = 2;
             const int miliseconds = 1000;
-#endif
+
             if (args.ToList().Contains("--nostop"))
             {
                 while (true)
@@ -67,7 +63,7 @@ namespace CoreSprint
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Erro: {0}\r\n{1}", e.Message, e.StackTrace);
+                    Console.WriteLine("Erro: {0}", e.Message);
                 }
             });
         }
