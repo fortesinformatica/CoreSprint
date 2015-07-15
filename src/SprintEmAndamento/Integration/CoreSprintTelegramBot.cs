@@ -10,14 +10,6 @@ using NetTelegramBotApi.Types;
 
 namespace CoreSprint.Integration
 {
-    public class WorkExtract : ICommand
-    {
-        public void Execute()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public class CoreSprintTelegramBot : ICommand
     {
         private readonly CoreSprintFactory _sprintFactory;
@@ -39,12 +31,14 @@ namespace CoreSprint.Integration
              * report - Relatório do sprint atual com horas trabalhadas e pendentes por profissional
              * update_report - Atualiza planilha do sprint atual com as informações do quadro de Sprint do Trello
              * update_cards_report - Atualiza lista de cartões do Trello na planilha do sprint atual
+             * update_work_extract - Atualiza a planilha de horas trabalhadas com o extrato do sprint
              */
             _telegramCommands = new Dictionary<string, ITelegramCommand>
             {
                 {"/report", new TelegramCurrentSprintReport(_telegramBot, _sprintFactory, CoreSprintApp.SpreadsheetId)},
                 {"/update_report", new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
-                {"/update_cards_report", new TelegramListSprintCards(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)}
+                {"/update_cards_report", new TelegramListSprintCards(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
+                {"/update_work_extract", new TelegramWorkExtractUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)}
             };
         }
 

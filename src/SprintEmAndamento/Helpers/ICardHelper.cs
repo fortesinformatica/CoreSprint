@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CoreSprint.Models;
 using TrelloNet;
 
 namespace CoreSprint.Helpers
@@ -21,5 +22,6 @@ namespace CoreSprint.Helpers
         Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime until);
         Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime startDate, DateTime endDate);
         Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, List<CommentCardAction> comments, string professional, DateTime startDate, DateTime endDate);
+        IList<CardWorkDto> GetCardWorkExtract(Card card, DateTime startDate, DateTime endDate);
     }
 }

@@ -94,6 +94,8 @@
     <Compile Include="Integration\TelegramCommands\ITelegramCommand.cs" />
     <Compile Include="Integration\TelegramCommands\TelegramCurrentSprintUpdate.cs" />
     <Compile Include="Integration\TelegramCommands\TelegramListSprintCards.cs" />
+    <Compile Include="Integration\WorkExtract.cs" />
+    <Compile Include="Models\CardWorkDto.cs" />
     <Compile Include="Spreadsheet\ISpreadsheetConnection.cs" />
     <Compile Include="Spreadsheet\ISpreadsheetFacade.cs" />
     <Compile Include="Telegram\TelegramConfiguration.cs" />
@@ -166,6 +168,7 @@
   <ItemGroup>
     <SourceFiles Include="$(OutputPath)\**\*.*" />
   </ItemGroup>
+  <ItemGroup />
   <Target Name="CopyFiles">
     <Copy SourceFiles="@(SourceFiles)" DestinationFolder="$(DeployFolder)$(TempFolderName)\$(AssemblyName)" />
   </Target>

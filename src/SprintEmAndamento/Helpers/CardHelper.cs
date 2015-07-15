@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using CoreSprint.Models;
 using CoreSprint.Trello;
 using TrelloNet;
 
@@ -23,6 +24,7 @@ namespace CoreSprint.Helpers
         private readonly Regex _numberPattern;
         private readonly Regex _startWorkPattern;
         private readonly Regex _stopWorkPattern;
+        private readonly CultureInfo _cultureInfoEnUs;
 
         public CardHelper(ITrelloFacade trelloFacade, ICommentHelper commentHelper)
         {
@@ -44,6 +46,8 @@ namespace CoreSprint.Helpers
                 RegexOptions.IgnoreCase);
             _startWorkPattern = new Regex(@">(\s)*inicia");
             _stopWorkPattern = new Regex(@">(\s)*(pausa|para)");
+
+            _cultureInfoEnUs = new CultureInfo("en-US");
         }
 
         public string GetUrgency(string priority)
@@ -69,7 +73,15 @@ namespace CoreSprint.Helpers
 
         public IEnumerable<CommentCardAction> GetCardComments(Card card)
         {
-            return _trelloFacade.GetActions(card, new[] { ActionType.CommentCard }).OfType<CommentCardAction>();
+            var comments = _trelloFacade.GetActions(card, new[] { ActionType.CommentCard }).OfType<CommentCardAction>();
+            var sortComparer = new CommentSortComparer(_commentHelper);
+            var commentCardActions = comments as IList<CommentCardAction> ?? comments.ToList();
+            var cardActions = commentCardActions as List<CommentCardAction>;
+
+            if (cardActions != null)
+                cardActions.Sort(sortComparer);
+
+            return cardActions;
         }
 
         public string GetResponsible(Card card)
@@ -153,27 +165,52 @@ namespace CoreSprint.Helpers
                 });
         }
 
-        private Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, Func<CommentCardAction, bool> validateComment)
+        public IList<CardWorkDto> GetCardWorkExtract(Card card, DateTime startDate, DateTime endDate)
         {
-            var cultureInfo = new CultureInfo("en-US");
-
-            var strRemainder = _numberPattern.Match(cardEstimate).Value;
-            var remainder = double.Parse(string.IsNullOrWhiteSpace(strRemainder) ? "0" : strRemainder, cultureInfo);
-            var worked = 0D;
-
+            var extract = new List<CardWorkDto>();
+            var comments = GetCardComments(card);
             var workedControl = new Dictionary<string, DateTime>();
 
-            var sortComparer = new CommentSortComparer(_commentHelper);
-            var commentCardActions = comments as IList<CommentCardAction> ?? comments.ToList();
-            var cardActions = commentCardActions as List<CommentCardAction>;
-            
-            if (cardActions != null)
-                cardActions.Sort(sortComparer);
+            foreach (var comment in comments)
+            {
+                var dateInComment = _commentHelper.GetDateInComment(comment);
+                var matchWork = _workedPattern.Match(comment.Data.Text).Success ||
+                                _startWorkPattern.Match(comment.Data.Text).Success ||
+                                _stopWorkPattern.Match(comment.Data.Text).Success;
 
-            foreach (var comment in commentCardActions.Where(comment => validateComment == null || validateComment(comment)))
+                if (matchWork && dateInComment >= startDate && dateInComment <= endDate)
+                {
+                    var remainder = 0D;
+                    var worked = CalculateRunningWorked(comment, workedControl);
+                    worked += CalculateWorkedAndReminder(comment, _cultureInfoEnUs, ref remainder);
+
+                    extract.Add(new CardWorkDto
+                    {
+                        Professional = comment.MemberCreator.FullName,
+                        CardName = GetCardTitle(card),
+                        CardLink = card.ShortLink,
+                        CommentAt = comment.Date,
+                        WorkAt = dateInComment,
+                        Worked = worked,
+                        Comment = comment.Data.Text
+                    });
+                }
+            }
+
+            return extract;
+        }
+
+        private Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, Func<CommentCardAction, bool> validateComment)
+        {
+            var strRemainder = _numberPattern.Match(cardEstimate).Value;
+            var remainder = double.Parse(string.IsNullOrWhiteSpace(strRemainder) ? "0" : strRemainder, _cultureInfoEnUs);
+            var worked = 0D;
+            var workedControl = new Dictionary<string, DateTime>();
+
+            foreach (var comment in comments.Where(comment => validateComment == null || validateComment(comment)))
             {
                 worked += CalculateRunningWorked(comment, workedControl);
-                worked += CalculateWorkedAndReminder(comment, cultureInfo, ref remainder);
+                worked += CalculateWorkedAndReminder(comment, _cultureInfoEnUs, ref remainder);
             }
 
             remainder = remainder > 0 ? remainder : 0;

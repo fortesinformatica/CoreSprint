@@ -32,6 +32,9 @@ namespace CoreSprint
             if (args.ToList().Contains("TelegramBot"))
                 commandList.Add(new CoreSprintTelegramBot(sprintFactory));
 
+            if (args.ToList().Contains("WorkExtract"))
+                commandList.Add(new WorkExtract(sprintFactory, trelloBoardId, spreadsheetId));
+
             return commandList;
         }
 
