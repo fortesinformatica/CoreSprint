@@ -188,7 +188,7 @@ namespace CoreSprint.Helpers
                     {
                         Professional = comment.MemberCreator.FullName,
                         CardName = GetCardTitle(card),
-                        CardLink = card.ShortLink,
+                        CardLink = card.ShortUrl,
                         CommentAt = comment.Date,
                         WorkAt = dateInComment,
                         Worked = worked,
