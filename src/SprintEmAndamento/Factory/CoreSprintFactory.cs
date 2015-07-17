@@ -51,5 +51,10 @@ namespace CoreSprint.Factory
         {
             return new WorksheetHelper(GetSpreadsheetFacade());
         }
+
+        public ISprintRunningHelper GetSprintRunningHelper()
+        {
+            return new SprintRunningHelper(GetSpreadsheetFacade());
+        }
     }
 }

@@ -12,5 +12,6 @@ namespace CoreSprint.Factory
         ISpreadsheetFacade GetSpreadsheetFacade();
         ICardHelper GetCardHelper();
         IWorksheetHelper GetWorksheetHelper();
+        ISprintRunningHelper GetSprintRunningHelper();
     }
 }

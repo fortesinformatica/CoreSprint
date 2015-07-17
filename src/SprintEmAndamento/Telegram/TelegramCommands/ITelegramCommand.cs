@@ -1,6 +1,6 @@
 using NetTelegramBotApi.Types;
 
-namespace CoreSprint.Integration.TelegramCommands
+namespace CoreSprint.Telegram.TelegramCommands
 {
     public interface ITelegramCommand
     {

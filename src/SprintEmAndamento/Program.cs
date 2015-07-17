@@ -7,7 +7,7 @@ using CoreSprint.Integration;
 
 namespace CoreSprint
 {
-    public class Program 
+    public class Program
     {
         static void Main(string[] args)
         {
@@ -25,8 +25,11 @@ namespace CoreSprint
             {
                 while (true)
                 {
-                    ExecuteCommands(GetCommandList(CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId, args));
-                    Thread.Sleep(seconds * miliseconds);
+                    ExecuteWithoutStopOnError(() =>
+                    {
+                        ExecuteCommands(GetCommandList(CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId, args));
+                        Thread.Sleep(seconds * miliseconds);
+                    });
                 }
             }
 
@@ -57,18 +60,19 @@ namespace CoreSprint
         private static void ExecuteCommands(List<ICommand> commandList)
         {
             CoreSprintApp.ConfigureRemoteIntegrations();
+            commandList.ForEach(c => ExecuteWithoutStopOnError(c.Execute));
+        }
 
-            commandList.ForEach(c =>
+        private static void ExecuteWithoutStopOnError(Action funcToExec)
+        {
+            try
             {
-                try
-                {
-                    c.Execute();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Erro: {0}", e.Message);
-                }
-            });
+                funcToExec();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Erro: {0}", e.Message);
+            }
         }
     }
 }

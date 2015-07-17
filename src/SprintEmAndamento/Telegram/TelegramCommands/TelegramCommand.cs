@@ -4,7 +4,7 @@ using NetTelegramBotApi;
 using NetTelegramBotApi.Requests;
 using NetTelegramBotApi.Types;
 
-namespace CoreSprint.Integration.TelegramCommands
+namespace CoreSprint.Telegram.TelegramCommands
 {
     public abstract class TelegramCommand : ITelegramCommand
     {

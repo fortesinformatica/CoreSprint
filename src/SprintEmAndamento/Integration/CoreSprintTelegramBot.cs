@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using CoreSprint.Factory;
-using CoreSprint.Integration.TelegramCommands;
 using CoreSprint.Telegram;
+using CoreSprint.Telegram.TelegramCommands;
 using NetTelegramBotApi;
 using NetTelegramBotApi.Requests;
 using NetTelegramBotApi.Types;
@@ -61,6 +61,7 @@ namespace CoreSprint.Integration
                         var command = telegramCommands[userCommand];
                         try
                         {
+                            SayCommandReceived(command, update, update.Message.Text);
                             command.Execute(update.Message);
                         }
                         catch (Exception e)
@@ -72,6 +73,13 @@ namespace CoreSprint.Integration
                     }
                 }
             }
+        }
+
+        private static void SayCommandReceived(ITelegramCommand command, Update update, string userCommand)
+        {
+            command.SendToChat(update.Message.Chat.Id,
+                string.Format("{0}, reconheço seu comando \"{1}\".\r\nPor favor, aguarde um momento enquanto processo...",
+                    update.Message.From.FirstName, userCommand));
         }
 
         private IEnumerable<Update> GetUpdates()

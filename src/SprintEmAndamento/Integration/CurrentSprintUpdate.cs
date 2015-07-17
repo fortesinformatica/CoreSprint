@@ -18,6 +18,8 @@ namespace CoreSprint.Integration
         private readonly ITrelloFacade _trelloFacade;
         private readonly ISpreadsheetFacade _spreadsheetFacade;
         private readonly ICardHelper _cardHelper;
+        private WorksheetEntry _worksheet;
+        private readonly ISprintRunningHelper _sprintRunningHelper;
 
         public CurrentSprintUpdate(ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
         {
@@ -26,6 +28,7 @@ namespace CoreSprint.Integration
             _trelloFacade = coreSprintFactory.GetTrelloFacade();
             _spreadsheetFacade = coreSprintFactory.GetSpreadsheetFacade();
             _cardHelper = coreSprintFactory.GetCardHelper();
+            _sprintRunningHelper = coreSprintFactory.GetSprintRunningHelper();
         }
 
         public void Execute()
@@ -37,50 +40,55 @@ namespace CoreSprint.Integration
             var cards = _trelloFacade.GetCards(_trelloBoardId);
 
             //recupera variáveis
-            var worksheet = _spreadsheetFacade.GetWorksheet(_spreadsheetId, worksheetName);
+            _worksheet = _spreadsheetFacade.GetWorksheet(_spreadsheetId, worksheetName);
 
             var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
-            var strStartDate = _spreadsheetFacade.GetCellValue(worksheet, 2, 2);
-            var strEndDate = _spreadsheetFacade.GetCellValue(worksheet, 3, 2);
+            var strStartDate = _spreadsheetFacade.GetCellValue(_worksheet, 2, 2);
+            var strEndDate = _spreadsheetFacade.GetCellValue(_worksheet, 3, 2);
 
             var startDate = Convert.ToDateTime(strStartDate, dateFormat);
             var endDate = Convert.ToDateTime(strEndDate, dateFormat);
-            var firstColumn = _spreadsheetFacade.GetCellsValues(worksheet, 1, uint.MaxValue, 1, 1).ToList();
-            var sprintPlanningPos = GetSprintPlanningPositions(firstColumn);
-            var sprintRunningPos = GetSprintRunningPositions(firstColumn);
-            var sprintAllocationByLabelsPos = GetSprintAllocationByLabelsPositions(firstColumn);
+            var firstColumn = _spreadsheetFacade.GetCellsValues(_worksheet, 1, uint.MaxValue, 1, 1).ToList();
+            var sprintPlanningPos = _sprintRunningHelper.GetSectionLinesPosition(firstColumn, "Relatório de planejamento do sprint");
+            var sprintRunningPos = _sprintRunningHelper.GetSectionLinesPosition(firstColumn, "Relatório de andamento do sprint");
+            var sprintAllocationByLabelsPos = _sprintRunningHelper.GetSectionLinesPosition(firstColumn, "Alocações por rótulo");
             //
 
             var resultOfAnalysis = AnalyzeCards(cards, startDate, endDate);
-            UpdateSpreadsheet(worksheet, resultOfAnalysis, sprintPlanningPos, sprintRunningPos, sprintAllocationByLabelsPos);
+            UpdateSpreadsheet(resultOfAnalysis, sprintPlanningPos, sprintRunningPos, sprintAllocationByLabelsPos);
         }
 
-        private void UpdateSpreadsheet(WorksheetEntry worksheet, Dictionary<string, Dictionary<string, double>> resultOfAnalysis, Dictionary<string, uint> sprintPlanningPos,
+        private void UpdateSpreadsheet(Dictionary<string, Dictionary<string, double>> resultOfAnalysis, Dictionary<string, uint> sprintPlanningPos,
             Dictionary<string, uint> sprintRunningPos, Dictionary<string, uint> sprintAllocationByLabelsPos)
         {
             Console.WriteLine("Atualizando relatório de planejamento de sprint...");
 
             Console.WriteLine("\t> Atualizando alocações...");
-            SaveCurrentSprintData(worksheet, resultOfAnalysis["allocationsByResponsible"], sprintPlanningPos, 3);
+            SaveCurrentSprintData(resultOfAnalysis["allocationsByResponsible"], sprintPlanningPos,
+                _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintPlanningPos, "Tempo alocado")); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando tempo operacional pendente...");
-            SaveCurrentSprintData(worksheet, resultOfAnalysis["remainderByResponsible"], sprintRunningPos, 4);
+            SaveCurrentSprintData(resultOfAnalysis["remainderByResponsible"], sprintRunningPos,
+                _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Trabalho alocado pendente")); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando tempo total trabalhado no sprint...");
-            SaveCurrentSprintData(worksheet, resultOfAnalysis["totalWorked"], sprintRunningPos, 3);
+            SaveCurrentSprintData(resultOfAnalysis["totalWorked"], sprintRunningPos,
+                _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Total trabalhado")); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando tempo trabalhado no sprint para alocações...");
-            SaveCurrentSprintData(worksheet, resultOfAnalysis["workedOnAllocations"], sprintRunningPos, 5);
+            SaveCurrentSprintData(resultOfAnalysis["workedOnAllocations"], sprintRunningPos,
+                _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Trabalhado em cartões alocados")); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando alocações por rótulo...");
-            SaveCurrentSprintData(worksheet, resultOfAnalysis["allocationByLabels"], sprintAllocationByLabelsPos, 2);
+            SaveCurrentSprintData(resultOfAnalysis["allocationByLabels"], sprintAllocationByLabelsPos,
+                _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintAllocationByLabelsPos, "Tempo alocado")); //TODO: utilizar constante
         }
 
-        private void SaveCurrentSprintData(WorksheetEntry worksheet, Dictionary<string, double> resultOfAnalysis, Dictionary<string, uint> sectionPositions, uint columnPosition)
+        private void SaveCurrentSprintData(Dictionary<string, double> resultOfAnalysis, Dictionary<string, uint> sectionPositions, uint columnPosition)
         {
             foreach (var keyValue in resultOfAnalysis)
             {
-                SetSprintValueByResponsible(worksheet, sectionPositions, columnPosition, keyValue.Key, keyValue.Value);
+                SetSprintValueByResponsible(_worksheet, sectionPositions, columnPosition, keyValue.Key, keyValue.Value);
                 Console.WriteLine("\t\t> {0} - {1}", keyValue.Key, keyValue.Value);
             }
         }
@@ -162,62 +170,6 @@ namespace CoreSprint.Integration
             if (index > 0)
                 _spreadsheetFacade.SaveToCell(worksheet, index, columnPosition,
                     value.ToString(CultureInfo.InvariantCulture).Replace(".", ","));
-        }
-
-        private Dictionary<string, uint> GetSprintAllocationByLabelsPositions(IEnumerable<CellEntry> firstColumn)
-        {
-            var positions = new Dictionary<string, uint>();
-            var cellEntries = firstColumn as IList<CellEntry> ?? firstColumn.ToList();
-
-            CalculateSectionPosition(cellEntries, positions,
-                c => c.Value.Equals("Alocações por rótulo"),
-                c => c.Value.Contains("#"));
-
-            return positions;
-        }
-        private Dictionary<string, uint> GetSprintRunningPositions(IEnumerable<CellEntry> firstColumn)
-        {
-            var positions = new Dictionary<string, uint>();
-            var cellEntries = firstColumn as IList<CellEntry> ?? firstColumn.ToList();
-
-            CalculateSectionPosition(cellEntries, positions,
-                c => c.Value.Equals("Relatório de andamento do sprint"),
-                c => c.Value.Contains("#"));
-
-            return positions;
-        }
-
-        private Dictionary<string, uint> GetSprintPlanningPositions(IEnumerable<CellEntry> firstColumn)
-        {
-            var positions = new Dictionary<string, uint>();
-            var cellEntries = firstColumn as IList<CellEntry> ?? firstColumn.ToList();
-
-            CalculateSectionPosition(cellEntries, positions,
-                c => c.Value.Equals("Relatório de planejamento do sprint"),
-                c => c.Value.Contains("#"));
-
-            return positions;
-        }
-
-        private void CalculateSectionPosition(IEnumerable<CellEntry> firstColumn, Dictionary<string, uint> positions,
-            Func<CellEntry, bool> checkIfEnterInSection, Func<CellEntry, bool> checkIfOutFromSection)
-        {
-            var inSection = false;
-
-            foreach (var cellEntry in firstColumn)
-            {
-                if (checkIfEnterInSection(cellEntry))
-                {
-                    inSection = true;
-                    continue;
-                }
-
-                if (inSection && checkIfOutFromSection(cellEntry))
-                    break;
-
-                if (inSection && !string.IsNullOrWhiteSpace(cellEntry.Value))
-                    positions.Add(cellEntry.Value.Trim(), cellEntry.Row);
-            }
         }
     }
 }

@@ -1,10 +1,11 @@
 using System;
 using CoreSprint.Extensions;
 using CoreSprint.Factory;
+using CoreSprint.Integration;
 using NetTelegramBotApi;
 using NetTelegramBotApi.Types;
 
-namespace CoreSprint.Integration.TelegramCommands
+namespace CoreSprint.Telegram.TelegramCommands
 {
     public class TelegramCurrentSprintUpdate : TelegramCommand
     {
