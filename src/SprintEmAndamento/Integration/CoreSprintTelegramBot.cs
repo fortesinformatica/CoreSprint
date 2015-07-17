@@ -92,14 +92,14 @@ namespace CoreSprint.Integration
 
         private static void SetLastUpdateId(long? updateId)
         {
-            File.WriteAllText(CoreSprintApp.TelegramDataPah, updateId.ToString());
+            File.WriteAllText(CoreSprintApp.TelegramDataPath, updateId.ToString());
         }
         private static long GetLastUpdateId()
         {
             var updateId = 1L;
-            if (File.Exists(CoreSprintApp.TelegramDataPah))
+            if (File.Exists(CoreSprintApp.TelegramDataPath))
             {
-                var lastUpdateId = File.ReadAllText(CoreSprintApp.TelegramDataPah);
+                var lastUpdateId = File.ReadAllText(CoreSprintApp.TelegramDataPath);
                 updateId = string.IsNullOrWhiteSpace(lastUpdateId) ? 1 : long.Parse(lastUpdateId);
             }
             return updateId;
