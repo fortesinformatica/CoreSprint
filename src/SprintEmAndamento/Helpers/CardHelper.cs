@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using CoreSprint.Extensions;
 using CoreSprint.Models;
 using CoreSprint.Trello;
 using TrelloNet;
@@ -189,7 +190,7 @@ namespace CoreSprint.Helpers
                         Professional = comment.MemberCreator.FullName,
                         CardName = GetCardTitle(card),
                         CardLink = card.ShortUrl,
-                        CommentAt = comment.Date,
+                        CommentAt = comment.Date.ConvertUtcToFortalezaTimeZone(),
                         WorkAt = dateInComment,
                         Worked = worked,
                         Comment = comment.Data.Text

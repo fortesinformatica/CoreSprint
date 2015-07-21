@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
+using CoreSprint.Extensions;
 using TrelloNet;
 
 namespace CoreSprint.Helpers
@@ -23,18 +25,17 @@ namespace CoreSprint.Helpers
                 var dateMatch = datePattern.Match(matchWorked.Value);
 
                 var dateInComment = Convert.ToDateTime(dateMatch.Value, dateFormat);
-                dateInComment = dateInComment.AddHours(3);
                 return dateInComment;
             }
 
-            return GetDateTimeChangedWhenTimeInformedInWork(comment) ?? comment.Date;
+            return GetDateTimeChangedWhenTimeInformedInWork(comment) ?? comment.Date.ConvertUtcToFortalezaTimeZone();
         }
 
         private static DateTime? GetDateTimeChangedWhenTimeInformedInWork(CommentCardAction comment)
         {
             DateTime? dateChanged = null;
             const string strWorkPattern = @">(\s)*(pausa|para|inicia)";
-            const string strHourPattern = @"[0-2][0-9]:[0-5][0-9]";
+            const string strHourPattern = @"[0-2]?[0-9]:[0-5]?[0-9]";
 
             var strStopedWork = string.Format(@"{0}(.)*{1}", strWorkPattern, strHourPattern);
             var stopWorkPattern = new Regex(strStopedWork);
@@ -45,11 +46,11 @@ namespace CoreSprint.Helpers
                 var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
                 var hourPattern = new Regex(strHourPattern);
                 var matchHourPattern = hourPattern.Match(matchStopWork.Value);
-                var strDateStopWork = string.Format("{0}/{1}/{2} {3}:00", comment.Date.Year, comment.Date.Month,
-                    comment.Date.Day, matchHourPattern.Value);
+                var hourText = matchHourPattern.Value.Split(':').Aggregate((text, next) => text.PadLeft(2, '0') + ":" + next.PadLeft(2, '0'));
+                var dateTime = comment.Date.ConvertUtcToFortalezaTimeZone();
+                var strDateStopWork = string.Format("{0}/{1}/{2} {3}:00", dateTime.Year, dateTime.Month, dateTime.Day, hourText);
 
                 dateChanged = Convert.ToDateTime(strDateStopWork, dateFormat);
-                dateChanged = dateChanged.Value.AddHours(3);
             }
             return dateChanged;
         }

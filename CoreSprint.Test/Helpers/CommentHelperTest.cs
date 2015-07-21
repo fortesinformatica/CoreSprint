@@ -29,7 +29,7 @@ namespace CoreSprint.Test.Helpers
 
             var date = _commentHelper.GetDateInComment(comment);
 
-            Assert.AreEqual(new DateTime(2015, 7, 7, 3, 0, 0), date);
+            Assert.AreEqual(new DateTime(2015, 7, 7, 0, 0, 0), date);
         }
 
         [Test]
@@ -37,7 +37,7 @@ namespace CoreSprint.Test.Helpers
         {
             var comment = new CommentCardAction
             {
-                Date = new DateTime(2015, 7, 8),
+                Date = new DateTime(2015, 7, 8, 3, 0, 0),
                 Data = new CommentCardAction.ActionData
                 {
                     Text = "> trabalhado 1 hora"
@@ -61,7 +61,7 @@ namespace CoreSprint.Test.Helpers
             };
 
             var date = _commentHelper.GetDateInComment(comment);
-            Assert.AreEqual(new DateTime(2015, 7, 8, 16, 30, 00), date);
+            Assert.AreEqual(new DateTime(2015, 7, 8, 13, 30, 00), date);
         }
 
         [Test]
@@ -77,7 +77,7 @@ namespace CoreSprint.Test.Helpers
             };
 
             var date = _commentHelper.GetDateInComment(comment);
-            Assert.AreEqual(new DateTime(2015, 7, 8, 16, 30, 00), date);
+            Assert.AreEqual(new DateTime(2015, 7, 8, 13, 30, 00), date);
         }
     }
 }

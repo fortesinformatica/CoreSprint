@@ -16,6 +16,9 @@ namespace CoreSprint.Integration
     {
         private readonly CoreSprintFactory _sprintFactory;
         private readonly TelegramBot _telegramBot;
+        private static List<Update> _unprocessedUpdates;
+        private static int _maxRunningCommands = 1;
+        public static int RunningCommands;
 
         public CoreSprintTelegramBot(CoreSprintFactory sprintFactory)
         {
@@ -27,6 +30,7 @@ namespace CoreSprint.Integration
             var telegramBotToken = TelegramConfiguration.GetConfiguration()["botToken"];
 
             _telegramBot = new TelegramBot(telegramBotToken);
+            _unprocessedUpdates = _unprocessedUpdates ?? new List<Update>();
         }
 
         private IDictionary<string, ITelegramCommand> GetCommands()
@@ -51,40 +55,97 @@ namespace CoreSprint.Integration
             //NetTelegramBotApi.Requests
             var updates = GetUpdates().AsParallel().AsOrdered();
 
+            if (updates.Any())
+                if (RunningCommands >= _maxRunningCommands)
+                    SayOccupied(updates);
+                else
+                    ExecuteInNewThread(ExecuteCommands(updates));
+        }
+
+        private void SayOccupied(ParallelQuery<Update> updates)
+        {
             updates.ForAll(update =>
             {
-                var telegramCommands = GetCommands();
                 SetLastUpdateId(update.UpdateId);
-
-                foreach (var userCommand in telegramCommands.Keys)
-                {
-                    if (update.Message.Text.ToLower().Trim().StartsWith(userCommand.Trim().ToLower()))
-                    {
-                        var command = telegramCommands[userCommand];
-                        try
-                        {
-                            ExecuteInNewThread(command, update);
-                        }
-                        catch (Exception e)
-                        {
-                            var msgError = string.Format("Ocorreu um erro ao executar o comando: {0}\r\n{1}", e.Message, e.StackTrace);
-                            Console.WriteLine(msgError);
-
-                            command.SendToChat(update.Message.Chat.Id, "Ocorreu um erro ao executar o comando!");
-                        }
-                    }
-                }
+                var message = string.Format("No momento estou ocupado para executar o comando \"{0}\". Assim que desocupar aviso.", update.Message.Text);
+                _unprocessedUpdates.Add(update);
+                TelegramCommand.SendMessageToChat(_telegramBot, update.Message.Chat.Id, message);
             });
         }
 
-        private static void ExecuteInNewThread(ITelegramCommand command, Update update)
+        private Action ExecuteCommands(ParallelQuery<Update> updates)
+        {
+            return () =>
+            {
+                updates.ForAll(update =>
+                {
+                    var telegramCommands = GetCommands();
+                    SetLastUpdateId(update.UpdateId);
+
+                    foreach (var userCommand in telegramCommands.Keys)
+                    {
+                        if (update.Message.Text.ToLower().Trim().StartsWith(userCommand.Trim().ToLower()))
+                        {
+                            var command = telegramCommands[userCommand];
+                            try
+                            {
+                                SayCommandReceived(command, update, update.Message.Text);
+                                command.Execute(update.Message);
+                            }
+                            catch (Exception e)
+                            {
+                                var msgError = string.Format("Ocorreu um erro ao executar o comando: {0}\r\n{1}", e.Message, e.StackTrace);
+                                Console.WriteLine(msgError);
+
+                                command.SendToChat(update.Message.Chat.Id, "Ocorreu um erro ao executar o comando!");
+                            }
+                        }
+                    }
+                });
+            };
+        }
+
+        private void ExecuteInNewThread(Action action)
         {
             var thread = new Thread(() =>
             {
-                SayCommandReceived(command, update, update.Message.Text);
-                command.Execute(update.Message);
+                RunningCommands++;
+                try
+                {
+                    action();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Ocorreu um erro!\r\n{0}", e.StackTrace);
+                }
+                finally
+                {
+                    RunningCommands--;
+                    SayIAmFree();
+                }
             });
             thread.Start();
+        }
+
+        private void SayIAmFree()
+        {
+            if (RunningCommands < _maxRunningCommands && _unprocessedUpdates != null && _unprocessedUpdates.Any())
+            {
+                var chats = _unprocessedUpdates.Select(u => u.Message.Chat.Id).Distinct().AsParallel();
+                chats.ForAll(chatId =>
+                {
+                    var commandsQueried =
+                        _unprocessedUpdates.Where(un => un.Message.Chat.Id == chatId)
+                            .Select(un => un.Message.From.FirstName + ": " + un.Message.Text)
+                            .Aggregate((text, next) => text + "\r\n" + next);
+                    var msgSayFree =
+                        string.Format("Já estou disponível para executar pelo menos um dos comandos solicitados:\r\n{0}",
+                            commandsQueried);
+
+                    TelegramCommand.SendMessageToChat(_telegramBot, chatId, msgSayFree);
+                    _unprocessedUpdates.RemoveAll(un => un.Message.Chat.Id == chatId);
+                });
+            }
         }
 
         private static void SayCommandReceived(ITelegramCommand command, Update update, string userCommand)

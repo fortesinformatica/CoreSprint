@@ -19,10 +19,15 @@ namespace CoreSprint.Telegram.TelegramCommands
 
         public void SendToChat(long chatId, string message)
         {
+            SendMessageToChat(TelegramBot, chatId, message);
+        }
+
+        public static void SendMessageToChat(TelegramBot telegramBot, long chatId, string message)
+        {
             var sendMessage = new SendMessage(chatId, message);
 
             Console.WriteLine("Enviando mensagem para o chat...\r\n{0}", sendMessage.Text);
-            var result = TelegramBot.MakeRequestAsync(sendMessage).Result;
+            var result = telegramBot.MakeRequestAsync(sendMessage).Result;
 
             Console.WriteLine(result == null
                 ? "Erro: Não foi possível enviar a mensagem para o chat!"
