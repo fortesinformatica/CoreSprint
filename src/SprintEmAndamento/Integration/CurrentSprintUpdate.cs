@@ -86,7 +86,7 @@ namespace CoreSprint.Integration
 
         private void SaveCurrentSprintData(Dictionary<string, double> resultOfAnalysis, Dictionary<string, uint> sectionPositions, uint columnPosition)
         {
-            foreach (var keyValue in resultOfAnalysis)
+            foreach (var keyValue in resultOfAnalysis.AsParallel())
             {
                 SetSprintValueByResponsible(_worksheet, sectionPositions, columnPosition, keyValue.Key, keyValue.Value);
                 Console.WriteLine("\t\t> {0} - {1}", keyValue.Key, keyValue.Value);
@@ -98,7 +98,7 @@ namespace CoreSprint.Integration
             Console.WriteLine("Analisando cartões...");
 
             var i = 0;
-            var enumerableCards = cards as IList<Card> ?? cards.ToList();
+            var enumerableCards = (cards as IList<Card> ?? cards.ToList()).AsParallel();
             var count = enumerableCards.Count();
             var result = new Dictionary<string, Dictionary<string, double>>();
             var board = _trelloFacade.GetBoard(_trelloBoardId);
@@ -122,7 +122,7 @@ namespace CoreSprint.Integration
                 var beforeRunning = _cardHelper.GetWorkedAndRemainder(estimate, comments, startDate);
                 var running = _cardHelper.GetWorkedAndRemainder(estimate, comments, endDate);
 
-                foreach (var responsible in responsibles.Split(';'))
+                foreach (var responsible in responsibles.Split(';').AsParallel())
                 {
                     var runningByResponsible = _cardHelper.GetWorkedAndRemainder(estimate, comments, responsible, startDate, endDate);
 
@@ -131,13 +131,13 @@ namespace CoreSprint.Integration
                     Calculate(workedOnAllocations, responsible, runningByResponsible["worked"]);
                 }
 
-                foreach (var boardMember in boardMembers)
+                foreach (var boardMember in boardMembers.AsParallel())
                 {
                     var onAllocations = _cardHelper.GetWorkedAndRemainder(estimate, comments, boardMember.FullName, startDate, endDate);
                     Calculate(totalWorked, boardMember.FullName, onAllocations["worked"]);
                 }
 
-                foreach (var label in labels.Split(';'))
+                foreach (var label in labels.Split(';').AsParallel())
                 {
                     Calculate(allocationByLabels, label, beforeRunning["remainder"]);
                 }

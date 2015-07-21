@@ -71,7 +71,7 @@ namespace CoreSprint
             }
             catch (Exception e)
             {
-                Console.WriteLine("Erro: {0}", e.Message);
+                Console.WriteLine("Erro: {0}\r\n{1}", e.Message, e.StackTrace);
             }
         }
     }

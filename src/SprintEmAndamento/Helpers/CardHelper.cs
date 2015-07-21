@@ -168,7 +168,7 @@ namespace CoreSprint.Helpers
         public IList<CardWorkDto> GetCardWorkExtract(Card card, DateTime startDate, DateTime endDate)
         {
             var extract = new List<CardWorkDto>();
-            var comments = GetCardComments(card);
+            var comments = GetCardComments(card).AsParallel().AsOrdered();
             var workedControl = new Dictionary<string, DateTime>();
 
             foreach (var comment in comments)
@@ -206,6 +206,8 @@ namespace CoreSprint.Helpers
             var remainder = double.Parse(string.IsNullOrWhiteSpace(strRemainder) ? "0" : strRemainder, _cultureInfoEnUs);
             var worked = 0D;
             var workedControl = new Dictionary<string, DateTime>();
+
+            comments = comments.AsParallel().AsOrdered();
 
             foreach (var comment in comments.Where(comment => validateComment == null || validateComment(comment)))
             {

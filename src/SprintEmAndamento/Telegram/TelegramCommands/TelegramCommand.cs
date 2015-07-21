@@ -21,7 +21,7 @@ namespace CoreSprint.Telegram.TelegramCommands
         {
             var sendMessage = new SendMessage(chatId, message);
 
-            Console.WriteLine("Enviando mensagem para o chat...");
+            Console.WriteLine("Enviando mensagem para o chat...\r\n{0}", sendMessage.Text);
             var result = TelegramBot.MakeRequestAsync(sendMessage).Result;
 
             Console.WriteLine(result == null

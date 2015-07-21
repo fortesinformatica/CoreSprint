@@ -63,7 +63,8 @@ namespace CoreSprint.Integration
 
             count = allWork.Count();
             i = 0;
-            foreach (var work in allWork)
+
+            allWork.AsParallel().AsOrdered().ForAll(work =>
             {
                 Console.WriteLine("Inserindo registro de trabalho ({0}/{1})", ++i, count);
 
@@ -71,7 +72,17 @@ namespace CoreSprint.Integration
 
                 //TODO: substituir para inserir em lote
                 _spreadsheetFacade.InsertInWorksheet(worksheet, row);
-            }
+            });
+
+            //foreach (var work in allWork)
+            //{
+            //    Console.WriteLine("Inserindo registro de trabalho ({0}/{1})", ++i, count);
+
+            //    var row = MountWorksheetRow(work);
+
+            //    //TODO: substituir para inserir em lote
+            //    _spreadsheetFacade.InsertInWorksheet(worksheet, row);
+            //}
         }
 
         private ListEntry MountWorksheetRow(CardWorkDto cardWork)

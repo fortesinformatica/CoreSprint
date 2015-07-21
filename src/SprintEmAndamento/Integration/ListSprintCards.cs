@@ -43,7 +43,8 @@ namespace CoreSprint.Integration
             var cards = _trelloFacade.GetCards(_trelloBoardId).ToList();
             var i = 0;
             var count = cards.Count();
-            foreach (var card in cards)
+
+            cards.AsParallel().ForAll(card =>
             {
                 Console.WriteLine("Inserindo cartão ({0}/{1}): {2}", ++i, count, card.Name);
 
@@ -51,7 +52,17 @@ namespace CoreSprint.Integration
 
                 //TODO: substituir para inserir em lote
                 _spreadsheetFacade.InsertInWorksheet(worksheet, row);
-            }
+            });
+
+            //foreach (var card in cards)
+            //{
+            //    Console.WriteLine("Inserindo cartão ({0}/{1}): {2}", ++i, count, card.Name);
+
+            //    var row = MountWorksheetRow(card);
+
+            //    //TODO: substituir para inserir em lote
+            //    _spreadsheetFacade.InsertInWorksheet(worksheet, row);
+            //}
         }
 
         private static List<string> GetHeadersName()

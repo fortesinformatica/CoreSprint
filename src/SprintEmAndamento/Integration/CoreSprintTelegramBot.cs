@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using CoreSprint.Factory;
 using CoreSprint.Telegram;
 using CoreSprint.Telegram.TelegramCommands;
@@ -47,9 +49,9 @@ namespace CoreSprint.Integration
         public void Execute()
         {
             //NetTelegramBotApi.Requests
-            var updates = GetUpdates();
+            var updates = GetUpdates().AsParallel().AsOrdered();
 
-            foreach (var update in updates)
+            updates.ForAll(update =>
             {
                 var telegramCommands = GetCommands();
                 SetLastUpdateId(update.UpdateId);
@@ -61,24 +63,34 @@ namespace CoreSprint.Integration
                         var command = telegramCommands[userCommand];
                         try
                         {
-                            SayCommandReceived(command, update, update.Message.Text);
-                            command.Execute(update.Message);
+                            ExecuteInNewThread(command, update);
                         }
                         catch (Exception e)
                         {
                             var msgError = string.Format("Ocorreu um erro ao executar o comando: {0}\r\n{1}", e.Message, e.StackTrace);
                             Console.WriteLine(msgError);
+
                             command.SendToChat(update.Message.Chat.Id, "Ocorreu um erro ao executar o comando!");
                         }
                     }
                 }
-            }
+            });
+        }
+
+        private static void ExecuteInNewThread(ITelegramCommand command, Update update)
+        {
+            var thread = new Thread(() =>
+            {
+                SayCommandReceived(command, update, update.Message.Text);
+                command.Execute(update.Message);
+            });
+            thread.Start();
         }
 
         private static void SayCommandReceived(ITelegramCommand command, Update update, string userCommand)
         {
             command.SendToChat(update.Message.Chat.Id,
-                string.Format("{0}, reconheço seu comando \"{1}\".\r\nPor favor, aguarde um momento enquanto processo...",
+                string.Format("{0}, recebi seu comando \"{1}\".\r\nPor favor, aguarde um momento enquanto processo...",
                     update.Message.From.FirstName, userCommand));
         }
 

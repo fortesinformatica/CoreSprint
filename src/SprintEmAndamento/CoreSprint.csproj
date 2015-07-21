@@ -100,6 +100,7 @@
     <Compile Include="Models\CardWorkDto.cs" />
     <Compile Include="Spreadsheet\ISpreadsheetConnection.cs" />
     <Compile Include="Spreadsheet\ISpreadsheetFacade.cs" />
+    <Compile Include="Telegram\TelegramCommands\TelegramWorkExtractUpdate.cs" />
     <Compile Include="Telegram\TelegramConfiguration.cs" />
     <Compile Include="Trello\ITrelloConnection.cs" />
     <Compile Include="Trello\ITrelloFacade.cs" />
