@@ -54,7 +54,7 @@ namespace CoreSprint.Integration
                 enumerable.AsParallel().AsOrdered().Aggregate(allWork,
                     (current, card) =>
                     {
-                        Console.WriteLine("Analisando cartão ({0}/{1}) {2}", i++, count, card.Name);
+                        Console.WriteLine("Analisando cartão ({0}/{1}) {2}", ++i, count, card.Name);
                         return current.Concat(_cardHelper.GetCardWorkExtract(card, startDate, endDate));
                     })
                     .OrderBy(w => w.Professional)

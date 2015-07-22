@@ -203,7 +203,7 @@ namespace CoreSprint.Helpers
 
         private Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, Func<CommentCardAction, bool> validateComment)
         {
-            var strRemainder = _numberPattern.Match(cardEstimate).Value;
+            var strRemainder = _numberPattern.Match(cardEstimate.Replace(",", ".")).Value;
             var remainder = double.Parse(string.IsNullOrWhiteSpace(strRemainder) ? "0" : strRemainder, _cultureInfoEnUs);
             var worked = 0D;
             var workedControl = new Dictionary<string, DateTime>();
