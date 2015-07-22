@@ -55,7 +55,12 @@ namespace CoreSprint.Integration
             //NetTelegramBotApi.Requests
             var updates = GetUpdates().AsParallel().AsOrdered();
 
-            if (updates.Any())
+            var anyNewUpdates = updates.Any();
+            
+            if (anyNewUpdates)
+                SetLastUpdateId(updates.Max(u => u.UpdateId));
+
+            if (anyNewUpdates && updates.Any(u => u.Message.Text.Trim().StartsWith("/")))
                 if (RunningCommands >= _maxRunningCommands)
                     SayOccupied(updates);
                 else
@@ -66,7 +71,6 @@ namespace CoreSprint.Integration
         {
             updates.ForAll(update =>
             {
-                SetLastUpdateId(update.UpdateId);
                 var message = string.Format("No momento estou ocupado para executar o comando \"{0}\". Assim que desocupar aviso.", update.Message.Text);
                 _unprocessedUpdates.Add(update);
                 TelegramCommand.SendMessageToChat(_telegramBot, update.Message.Chat.Id, message);
@@ -80,7 +84,6 @@ namespace CoreSprint.Integration
                 updates.ForAll(update =>
                 {
                     var telegramCommands = GetCommands();
-                    SetLastUpdateId(update.UpdateId);
 
                     foreach (var userCommand in telegramCommands.Keys)
                     {
