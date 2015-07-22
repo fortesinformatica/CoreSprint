@@ -86,6 +86,9 @@ namespace CoreSprint.Integration
 
         private void SaveCurrentSprintData(Dictionary<string, double> resultOfAnalysis, Dictionary<string, uint> sectionPositions, uint columnPosition)
         {
+            if (!resultOfAnalysis.Any(r => r.Key.Equals("--Indefinido--")))
+                resultOfAnalysis.Add("--Indefinido--", 0);
+
             foreach (var keyValue in resultOfAnalysis.AsParallel())
             {
                 SetSprintValueByResponsible(_worksheet, sectionPositions, columnPosition, keyValue.Key, keyValue.Value);
