@@ -37,18 +37,18 @@ namespace CoreSprint.Integration
 
             Console.WriteLine("Recuperando alocações dos profissionais...");
 
-            var cards = _trelloFacade.GetCards(_trelloBoardId);
+            var cards = ExecutionHelper.ExecuteAndRetryOnFail(() => _trelloFacade.GetCards(_trelloBoardId));
 
             //recupera variáveis
-            _worksheet = _spreadsheetFacade.GetWorksheet(_spreadsheetId, worksheetName);
+            _worksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetWorksheet(_spreadsheetId, worksheetName));
 
             var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
-            var strStartDate = _spreadsheetFacade.GetCellValue(_worksheet, 2, 2);
-            var strEndDate = _spreadsheetFacade.GetCellValue(_worksheet, 3, 2);
+            var strStartDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(_worksheet, 2, 2));
+            var strEndDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(_worksheet, 3, 2));
 
             var startDate = Convert.ToDateTime(strStartDate, dateFormat);
             var endDate = Convert.ToDateTime(strEndDate, dateFormat);
-            var firstColumn = _spreadsheetFacade.GetCellsValues(_worksheet, 1, uint.MaxValue, 1, 1).ToList();
+            var firstColumn = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellsValues(_worksheet, 1, uint.MaxValue, 1, 1)).ToList();
             var sprintPlanningPos = _sprintRunningHelper.GetSectionLinesPosition(firstColumn, "Relatório de planejamento do sprint");
             var sprintRunningPos = _sprintRunningHelper.GetSectionLinesPosition(firstColumn, "Relatório de andamento do sprint");
             var sprintAllocationByLabelsPos = _sprintRunningHelper.GetSectionLinesPosition(firstColumn, "Alocações por rótulo");
@@ -117,9 +117,10 @@ namespace CoreSprint.Integration
             {
                 Console.WriteLine("\t> ({0}/{1}) Cartão: {2}", ++i, count, card.Name);
 
-                var responsibles = _cardHelper.GetResponsible(card).Trim().Replace("-", "--Indefinido--");
+                var card1 = card;
+                var responsibles = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetResponsible(card1)).Trim().Replace("-", "--Indefinido--");
                 var estimate = _cardHelper.GetCardEstimate(card);
-                var comments = _cardHelper.GetCardComments(card).ToList();
+                var comments = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetCardComments(card1)).ToList();
                 var labels = _cardHelper.GetCardLabels(card);
 
                 var beforeRunning = _cardHelper.GetWorkedAndRemainder(estimate, comments, startDate);
@@ -171,8 +172,10 @@ namespace CoreSprint.Integration
                         label.ToLower().Contains(k.Key.ToLower())).Value;
 
             if (index > 0)
-                _spreadsheetFacade.SaveToCell(worksheet, index, columnPosition,
-                    value.ToString(CultureInfo.InvariantCulture).Replace(".", ","));
+                ExecutionHelper.ExecuteAndRetryOnFail(
+                    () =>
+                        _spreadsheetFacade.SaveToCell(worksheet, index, columnPosition,
+                            value.ToString(CultureInfo.InvariantCulture).Replace(".", ",")));
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using CoreSprint.Factory;
 using CoreSprint.Helpers;
+using CoreSprint.Spreadsheet;
 using CoreSprint.Trello;
 using NetTelegramBotApi;
 using NetTelegramBotApi.Types;
@@ -15,15 +16,19 @@ namespace CoreSprint.Telegram.TelegramCommands
     public class TelegramCardInfo : TelegramCommand
     {
         private readonly string _trelloBoardId;
+        private readonly string _spreadsheetId;
         private readonly ITrelloFacade _trelloFacade;
         private readonly ICardHelper _cardHelper;
+        private readonly ISpreadsheetFacade _spreadsheetFacade;
 
-        public TelegramCardInfo(TelegramBot telegramBot, ICoreSprintFactory coreSprintFactory, string trelloBoardId)
+        public TelegramCardInfo(TelegramBot telegramBot, ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
             : base(telegramBot)
         {
             _trelloBoardId = trelloBoardId;
+            _spreadsheetId = spreadsheetId;
             _trelloFacade = coreSprintFactory.GetTrelloFacade();
             _cardHelper = coreSprintFactory.GetCardHelper();
+            _spreadsheetFacade = coreSprintFactory.GetSpreadsheetFacade();
         }
 
         public override void Execute(Message message)
@@ -47,6 +52,7 @@ namespace CoreSprint.Telegram.TelegramCommands
                 if (filteredCards.Any())
                 {
                     filteredCards.ForAll(card => SendToChat(chatId, MountCardInfo(card)));
+                    SendToChat(chatId, string.Format("Todos os cartões foram listados em resposta ao comando \"{0}\".", message.Text));
                 }
                 else
                 {
@@ -65,9 +71,7 @@ namespace CoreSprint.Telegram.TelegramCommands
 
         private IEnumerable<Card> GetCards()
         {
-            IEnumerable<Card> cards = null;
-            ExecutionHelper.ExecuteAndRetryOnFail(() => cards = _trelloFacade.GetCards(_trelloBoardId));
-            return cards;
+            return ExecutionHelper.ExecuteAndRetryOnFail(() => _trelloFacade.GetCards(_trelloBoardId));
         }
 
         private IEnumerable<string> GetQueryResponsible(string message)
@@ -104,8 +108,7 @@ namespace CoreSprint.Telegram.TelegramCommands
             cards = qResponsible.Any()
                 ? cards.Where(c =>
                 {
-                    var cardResponsible = "";
-                    ExecutionHelper.ExecuteAndRetryOnFail(() => cardResponsible = _cardHelper.GetResponsible(c));
+                    var cardResponsible = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetResponsible(c));
                     return cardResponsible.Split(';').Any(r => qResponsible.Any(qr => r.ToLower().Contains(qr.ToLower()) || qr.ToLower().Contains(r.ToLower())));
                 })
                 : cards;
@@ -117,9 +120,19 @@ namespace CoreSprint.Telegram.TelegramCommands
         {
             Console.WriteLine("Montando resposta para o cartão: {0}", card.Name);
 
+            const string worksheetName = "SprintCorrente";
+            var worksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetWorksheet(_spreadsheetId, worksheetName));
+            var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
+            var strStartDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(worksheet, 2, 2));
+            var strEndDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(worksheet, 3, 2));
+            var startDate = Convert.ToDateTime(strStartDate, dateFormat);
+            var endDate = Convert.ToDateTime(strEndDate, dateFormat);
             var cardName = _cardHelper.GetCardTitle(card);
-            var workedAndRemainder = _cardHelper.GetWorkedAndRemainder(card);
             var estimate = _cardHelper.GetCardEstimate(card);
+            var comments = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetCardComments(card)).ToList();
+            var workedAndRemainder = _cardHelper.GetWorkedAndRemainder(estimate, comments, endDate);
+            var workedAndRemainderInSprint = _cardHelper.GetWorkedAndRemainder(estimate, comments, startDate, endDate);
+            var workedInSprint = workedAndRemainderInSprint["worked"].ToString(CultureInfo.InvariantCulture);
             var worked = workedAndRemainder["worked"].ToString(CultureInfo.InvariantCulture)
                 .Replace(".", ",");
             var remainder =
@@ -127,9 +140,10 @@ namespace CoreSprint.Telegram.TelegramCommands
             var status = _cardHelper.GetStatus(card);
             var responsibles = _cardHelper.GetResponsible(card);
 
+            //TODO: ajustar ordem
             var message = string.Format(
-                "Cartão: {0} ({1})\r\n-------------------\r\nResponsável: {6}\r\nStatus: {5}\r\nEstimado: {2}\r\nTrabalhado: {3}\r\nPendente: {4}",
-                cardName, card.Url, estimate, worked, remainder, status, responsibles);
+                "Cartão: {0} ({1})\r\n-------------------\r\nResponsável: {6}\r\nStatus: {5}\r\nEstimado: {2}\r\nTrabalhado: {3}\r\nTrabalhado no Sprint: {7}\r\nPendente: {4}",
+                cardName, card.Url, estimate, worked, remainder, status, responsibles, workedInSprint);
 
             return message;
         }

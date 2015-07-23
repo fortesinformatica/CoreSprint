@@ -18,7 +18,7 @@ namespace CoreSprint.Integration
         private readonly CoreSprintFactory _sprintFactory;
         private readonly TelegramBot _telegramBot;
         private static List<Update> _unprocessedUpdates;
-        private static int _maxRunningCommands = 1;
+        private static int _maxRunningCommands = 3;
         public static int RunningCommands;
 
         public CoreSprintTelegramBot(CoreSprintFactory sprintFactory)
@@ -49,7 +49,7 @@ namespace CoreSprint.Integration
                 {"/update_report", new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
                 {"/update_cards_report", new TelegramListSprintCards(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
                 {"/update_work_extract", new TelegramWorkExtractUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
-                {"/card_info", new TelegramCardInfo(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId)}
+                {"/card_info", new TelegramCardInfo(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)}
             };
         }
 

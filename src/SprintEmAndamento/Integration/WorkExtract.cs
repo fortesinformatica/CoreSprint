@@ -36,17 +36,17 @@ namespace CoreSprint.Integration
 
         public void Execute()
         {
-            var cards = _trelloFacade.GetCards(_trelloBoardId);
-            var sprintSorksheet = _spreadsheetFacade.GetWorksheet(_spreadsheetId, "SprintCorrente");
+            var cards = ExecutionHelper.ExecuteAndRetryOnFail(() => _trelloFacade.GetCards(_trelloBoardId));
+            var sprintSorksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetWorksheet(_spreadsheetId, "SprintCorrente"));
             var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
-            var strStartDate = _spreadsheetFacade.GetCellValue(sprintSorksheet, 2, 2);
-            var strEndDate = _spreadsheetFacade.GetCellValue(sprintSorksheet, 3, 2);
+            var strStartDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(sprintSorksheet, 2, 2));
+            var strEndDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(sprintSorksheet, 3, 2));
             var startDate = Convert.ToDateTime(strStartDate, dateFormat);
             var endDate = Convert.ToDateTime(strEndDate, dateFormat);
             var i = 0;
             IEnumerable<CardWorkDto> allWork = new List<CardWorkDto>();
 
-            var worksheet = _worksheetHelper.RedoWorksheet(_spreadsheetId, "HorasTrabalhadas", GetHeadersName());
+            var worksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _worksheetHelper.RedoWorksheet(_spreadsheetId, "HorasTrabalhadas", GetHeadersName()));
             var enumerable = cards as IList<Card> ?? cards.ToList();
             var count = enumerable.Count();
 
@@ -55,7 +55,7 @@ namespace CoreSprint.Integration
                     (current, card) =>
                     {
                         Console.WriteLine("Analisando cartão ({0}/{1}) {2}", ++i, count, card.Name);
-                        return current.Concat(_cardHelper.GetCardWorkExtract(card, startDate, endDate));
+                        return current.Concat(ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetCardWorkExtract(card, startDate, endDate)));
                     })
                     .OrderBy(w => w.Professional)
                     .ThenBy(w => w.WorkAt)
@@ -71,11 +71,11 @@ namespace CoreSprint.Integration
                 var row = MountWorksheetRow(work);
 
                 //TODO: substituir para inserir em lote
-                _spreadsheetFacade.InsertInWorksheet(worksheet, row);
+                ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.InsertInWorksheet(worksheet, row));
             }
         }
 
-        private ListEntry MountWorksheetRow(CardWorkDto cardWork)
+        private static ListEntry MountWorksheetRow(CardWorkDto cardWork)
         {
             var cultureInfoPtBr = new CultureInfo("pt-BR", false);
             var row = new ListEntry();

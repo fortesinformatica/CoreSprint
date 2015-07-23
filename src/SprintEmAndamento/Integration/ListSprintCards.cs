@@ -40,7 +40,7 @@ namespace CoreSprint.Integration
 
         private void CopyCardsToSpreadsheet(WorksheetEntry worksheet)
         {
-            var cards = _trelloFacade.GetCards(_trelloBoardId).ToList();
+            var cards = ExecutionHelper.ExecuteAndRetryOnFail(() => _trelloFacade.GetCards(_trelloBoardId)).ToList();
             var i = 0;
             var count = cards.Count();
 
@@ -51,18 +51,8 @@ namespace CoreSprint.Integration
                 var row = MountWorksheetRow(card);
 
                 //TODO: substituir para inserir em lote
-                _spreadsheetFacade.InsertInWorksheet(worksheet, row);
+                ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.InsertInWorksheet(worksheet, row));
             });
-
-            //foreach (var card in cards)
-            //{
-            //    Console.WriteLine("Inserindo cartão ({0}/{1}): {2}", ++i, count, card.Name);
-
-            //    var row = MountWorksheetRow(card);
-
-            //    //TODO: substituir para inserir em lote
-            //    _spreadsheetFacade.InsertInWorksheet(worksheet, row);
-            //}
         }
 
         private static List<string> GetHeadersName()
@@ -93,8 +83,8 @@ namespace CoreSprint.Integration
             var estimate = _cardHelper.GetCardEstimate(card);
             var labels = _cardHelper.GetCardLabels(card);
             var status = _cardHelper.GetStatus(card);
-            var responsible = _cardHelper.GetResponsible(card);
-            var workedAndRemainder = _cardHelper.GetWorkedAndRemainder(card);
+            var responsible = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetResponsible(card));
+            var workedAndRemainder = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetWorkedAndRemainder(card));
             var worked = workedAndRemainder["worked"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
             var remainder = workedAndRemainder["remainder"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
             var reassessment = (workedAndRemainder["worked"] + workedAndRemainder["remainder"]).ToString(CultureInfo.InvariantCulture).Replace(".", ",");
