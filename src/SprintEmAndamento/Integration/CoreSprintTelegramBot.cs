@@ -6,6 +6,7 @@ using System.Threading;
 using CoreSprint.Factory;
 using CoreSprint.Telegram;
 using CoreSprint.Telegram.TelegramCommands;
+using CoreSprint.Trello;
 using NetTelegramBotApi;
 using NetTelegramBotApi.Requests;
 using NetTelegramBotApi.Types;
@@ -40,13 +41,15 @@ namespace CoreSprint.Integration
              * update_report - Atualiza planilha do sprint atual com as informações do quadro de Sprint do Trello
              * update_cards_report - Atualiza lista de cartões do Trello na planilha do sprint atual
              * update_work_extract - Atualiza a planilha de horas trabalhadas com o extrato do sprint
+             * card_info - Recupera informações de estimativa e tempo trabalhado do cartão
              */
             return new Dictionary<string, ITelegramCommand>
             {
                 {"/report", new TelegramCurrentSprintReport(_telegramBot, _sprintFactory, CoreSprintApp.SpreadsheetId)},
                 {"/update_report", new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
                 {"/update_cards_report", new TelegramListSprintCards(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
-                {"/update_work_extract", new TelegramWorkExtractUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)}
+                {"/update_work_extract", new TelegramWorkExtractUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
+                {"/card_info", new TelegramCardInfo(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId)}
             };
         }
 
@@ -56,7 +59,7 @@ namespace CoreSprint.Integration
             var updates = GetUpdates().AsParallel().AsOrdered();
 
             var anyNewUpdates = updates.Any();
-            
+
             if (anyNewUpdates)
                 SetLastUpdateId(updates.Max(u => u.UpdateId));
 
