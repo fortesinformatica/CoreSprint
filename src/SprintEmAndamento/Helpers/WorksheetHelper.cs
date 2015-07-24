@@ -14,11 +14,8 @@ namespace CoreSprint.Helpers
             _spreadsheetFacade = spreadsheetFacade;
         }
 
-        public WorksheetEntry RedoWorksheet(string spreadsheetId, string worksheetName, List<string> headerNames)
+        public WorksheetEntry RedoWorksheet(SpreadsheetEntry spreadsheet, string worksheetName, List<string> headerNames)
         {
-            Console.WriteLine("Recriando {0}...", worksheetName);
-
-            var spreadsheet = _spreadsheetFacade.GetSpreadsheet(spreadsheetId);
             var createdTempWorksheet = false;
 
             if (spreadsheet.Worksheets.Entries.Count <= 1)
@@ -36,6 +33,14 @@ namespace CoreSprint.Helpers
             var worksheet = _spreadsheetFacade.GetWorksheet(spreadsheet, worksheetName);
             _spreadsheetFacade.CreateHeader(worksheet, headerNames);
             return worksheet;
+        }
+
+        public WorksheetEntry RedoWorksheet(string spreadsheetId, string worksheetName, List<string> headerNames)
+        {
+            Console.WriteLine("Recriando {0}...", worksheetName);
+
+            var spreadsheet = _spreadsheetFacade.GetSpreadsheet(spreadsheetId);
+            return RedoWorksheet(spreadsheet, worksheetName, headerNames);
         }
     }
 }

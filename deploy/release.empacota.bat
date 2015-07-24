@@ -1,1 +1,1 @@
-"C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe" "%~dp0..\src\SprintEmAndamento\CoreSprint.csproj" /p:Configuration=Release
+"C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe" "%~dp0..\src\SprintEmAndamento\CoreSprint.csproj" /p:Configuration=Release

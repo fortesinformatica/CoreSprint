@@ -19,6 +19,7 @@ namespace CoreSprint.Integration
         private readonly ISpreadsheetFacade _spreadsheetFacade;
         private readonly ICardHelper _cardHelper;
         private readonly IWorksheetHelper _worksheetHelper;
+        private ISprintRunningHelper _sprintRunningHelper;
 
         public ListSprintCards(ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
         {
@@ -28,17 +29,23 @@ namespace CoreSprint.Integration
             _spreadsheetFacade = coreSprintFactory.GetSpreadsheetFacade();
             _cardHelper = coreSprintFactory.GetCardHelper();
             _worksheetHelper = coreSprintFactory.GetWorksheetHelper();
+            _sprintRunningHelper = coreSprintFactory.GetSprintRunningHelper();
         }
 
         public void Execute()
         {
             const string worksheetName = "ListaDeCartoes";
+            const string sprintWorksheetName = "SprintCorrente";
 
-            var worksheet = _worksheetHelper.RedoWorksheet(_spreadsheetId, worksheetName, GetHeadersName());
-            CopyCardsToSpreadsheet(worksheet);
+            var spreadsheet = _spreadsheetFacade.GetSpreadsheet(_spreadsheetId);
+            var worksheet = _worksheetHelper.RedoWorksheet(spreadsheet, worksheetName, GetHeadersName());
+            var sprintWorksheet = _spreadsheetFacade.GetWorksheet(spreadsheet, sprintWorksheetName);
+            var sprintPeriod = _sprintRunningHelper.GetSprintPeriod(sprintWorksheet);
+
+            CopyCardsToSpreadsheet(worksheet, sprintPeriod);
         }
 
-        private void CopyCardsToSpreadsheet(WorksheetEntry worksheet)
+        private void CopyCardsToSpreadsheet(WorksheetEntry worksheet, Dictionary<string, DateTime> sprintPeriod)
         {
             var cards = ExecutionHelper.ExecuteAndRetryOnFail(() => _trelloFacade.GetCards(_trelloBoardId)).ToList();
             var i = 0;
@@ -48,7 +55,7 @@ namespace CoreSprint.Integration
             {
                 Console.WriteLine("Inserindo cartão ({0}/{1}): {2}", ++i, count, card.Name);
 
-                var row = MountWorksheetRow(card);
+                var row = MountWorksheetRow(card, sprintPeriod);
 
                 //TODO: substituir para inserir em lote
                 ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.InsertInWorksheet(worksheet, row));
@@ -66,6 +73,7 @@ namespace CoreSprint.Integration
                 "urgencia",
                 "estimativa",
                 "trabalhado",
+                "trabalhadonosprint",
                 "restante",
                 "reestimativa",
                 "rotulos",
@@ -73,7 +81,7 @@ namespace CoreSprint.Integration
             };
         }
 
-        private ListEntry MountWorksheetRow(Card card)
+        private ListEntry MountWorksheetRow(Card card, Dictionary<string, DateTime> sprintPeriod)
         {
             var row = new ListEntry();
             var title = _cardHelper.GetCardTitle(card);
@@ -84,8 +92,11 @@ namespace CoreSprint.Integration
             var labels = _cardHelper.GetCardLabels(card);
             var status = _cardHelper.GetStatus(card);
             var responsible = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetResponsible(card));
-            var workedAndRemainder = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetWorkedAndRemainder(card));
+            var comments = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetCardComments(card));
+            var workedAndRemainder = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetWorkedAndRemainder(estimate, comments, sprintPeriod["endDate"]));
+            var workedAndRemainderInSprint = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetWorkedAndRemainder(estimate, comments, sprintPeriod["startDate"], sprintPeriod["endDate"])); 
             var worked = workedAndRemainder["worked"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var workedInSprint = workedAndRemainderInSprint["worked"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
             var remainder = workedAndRemainder["remainder"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
             var reassessment = (workedAndRemainder["worked"] + workedAndRemainder["remainder"]).ToString(CultureInfo.InvariantCulture).Replace(".", ",");
 
@@ -96,6 +107,7 @@ namespace CoreSprint.Integration
             row.Elements.Add(new ListEntry.Custom { LocalName = "urgencia", Value = urgency });
             row.Elements.Add(new ListEntry.Custom { LocalName = "estimativa", Value = estimate });
             row.Elements.Add(new ListEntry.Custom { LocalName = "trabalhado", Value = worked });
+            row.Elements.Add(new ListEntry.Custom { LocalName = "trabalhadonosprint", Value = workedInSprint });
             row.Elements.Add(new ListEntry.Custom { LocalName = "restante", Value = remainder });
             row.Elements.Add(new ListEntry.Custom { LocalName = "reestimativa", Value = reassessment });
             row.Elements.Add(new ListEntry.Custom { LocalName = "rotulos", Value = labels });
