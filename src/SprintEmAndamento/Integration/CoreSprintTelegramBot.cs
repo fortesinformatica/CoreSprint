@@ -166,7 +166,7 @@ namespace CoreSprint.Integration
             return _telegramBot.MakeRequestAsync(new GetUpdates
             {
                 Offset = GetLastUpdateId() + 1
-            }).Result;
+            }).Result ?? new Update[0];
         }
 
         private static void SetLastUpdateId(long? updateId)
