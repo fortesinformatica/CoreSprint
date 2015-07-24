@@ -1,20 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using CoreSprint.Spreadsheet;
 using Google.GData.Spreadsheets;
 
 namespace CoreSprint.Helpers
 {
-    public interface ISprintRunningHelper
-    {
-        List<CellEntry> GetFirstColumn(WorksheetEntry worksheet);
-        Dictionary<string, uint> GetSectionLinesPosition(WorksheetEntry worksheet, string sectionTitle);
-        Dictionary<string, uint> GetSectionLinesPosition(IEnumerable<CellEntry> firstColumn, string sectionTitle);
-        uint GetHeaderColumnPosition(WorksheetEntry worksheet, string sectionTitle, string columnName);
-        uint GetHeaderColumnPosition(WorksheetEntry worksheet, Dictionary<string, uint> sectionLines, string columnName);
-    }
-
     public class SprintRunningHelper : ISprintRunningHelper
     {
         private readonly ISpreadsheetFacade _spreadsheetFacade;
@@ -76,6 +68,18 @@ namespace CoreSprint.Helpers
             var rowLine = sectionLines.Min(spp => spp.Value) - 1;
             var headerSectionLine = _spreadsheetFacade.GetCellsValues(worksheet, rowLine, rowLine, 1, uint.MaxValue).ToList();
             return headerSectionLine.Where(h => h.Value.Equals(columnName)).Select(h => h.Column).First();
+        }
+
+        public Dictionary<string, DateTime> GetSprintPeriod(WorksheetEntry worksheet)
+        {
+            var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
+            var strStartDate = _spreadsheetFacade.GetCellValue(worksheet, 2, 2);
+            var strEndDate = _spreadsheetFacade.GetCellValue(worksheet, 3, 2);
+
+            var startDate = Convert.ToDateTime(strStartDate, dateFormat);
+            var endDate = Convert.ToDateTime(strEndDate, dateFormat);
+
+            return new Dictionary<string, DateTime> { { "startDate", startDate }, { "endDate", endDate } };
         }
     }
 }

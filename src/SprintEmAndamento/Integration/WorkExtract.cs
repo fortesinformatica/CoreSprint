@@ -21,6 +21,7 @@ namespace CoreSprint.Integration
         private readonly ICardHelper _cardHelper;
         private readonly ISpreadsheetFacade _spreadsheetFacade;
         private readonly IWorksheetHelper _worksheetHelper;
+        private readonly ISprintRunningHelper _sprintRunningHelper;
 
         public WorkExtract(ICoreSprintFactory sprintFactory, string trelloBoardId, string spreadsheetId)
         {
@@ -30,17 +31,16 @@ namespace CoreSprint.Integration
             _spreadsheetFacade = sprintFactory.GetSpreadsheetFacade();
             _cardHelper = sprintFactory.GetCardHelper();
             _worksheetHelper = sprintFactory.GetWorksheetHelper();
+            _sprintRunningHelper = sprintFactory.GetSprintRunningHelper();
         }
 
         public void Execute()
         {
             var cards = ExecutionHelper.ExecuteAndRetryOnFail(() => _trelloFacade.GetCards(_trelloBoardId));
-            var sprintSorksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetWorksheet(_spreadsheetId, "SprintCorrente"));
-            var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
-            var strStartDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(sprintSorksheet, 2, 2));
-            var strEndDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(sprintSorksheet, 3, 2));
-            var startDate = Convert.ToDateTime(strStartDate, dateFormat);
-            var endDate = Convert.ToDateTime(strEndDate, dateFormat);
+            var sprintWorksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetWorksheet(_spreadsheetId, "SprintCorrente"));
+            var sprintPeriod = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetSprintPeriod(sprintWorksheet));
+            var startDate = sprintPeriod["startDate"];
+            var endDate = sprintPeriod["endDate"];
             var i = 0;
             IEnumerable<CardWorkDto> allWork = new List<CardWorkDto>();
 

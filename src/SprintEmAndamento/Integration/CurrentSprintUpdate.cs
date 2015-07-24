@@ -42,12 +42,10 @@ namespace CoreSprint.Integration
             //recupera variáveis
             _worksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetWorksheet(_spreadsheetId, worksheetName));
 
-            var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
-            var strStartDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(_worksheet, 2, 2));
-            var strEndDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(_worksheet, 3, 2));
+            var sprintPeriod = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetSprintPeriod(_worksheet));
+            var startDate = sprintPeriod["startDate"];
+            var endDate = sprintPeriod["endDate"];
 
-            var startDate = Convert.ToDateTime(strStartDate, dateFormat);
-            var endDate = Convert.ToDateTime(strEndDate, dateFormat);
             var firstColumn = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellsValues(_worksheet, 1, uint.MaxValue, 1, 1)).ToList();
             var sprintPlanningPos = _sprintRunningHelper.GetSectionLinesPosition(firstColumn, "Relatório de planejamento do sprint");
             var sprintRunningPos = _sprintRunningHelper.GetSectionLinesPosition(firstColumn, "Relatório de andamento do sprint");

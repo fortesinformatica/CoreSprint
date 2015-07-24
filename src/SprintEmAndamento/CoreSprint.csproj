@@ -90,6 +90,7 @@
     <Compile Include="Extensions\DateTimeEx.cs" />
     <Compile Include="Helpers\ICommentHelper.cs" />
     <Compile Include="Helpers\ExecutionHelper.cs" />
+    <Compile Include="Helpers\ISprintRunningHelper.cs" />
     <Compile Include="Helpers\SprintRunningHelper.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramCardInfo.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramCommand.cs" />

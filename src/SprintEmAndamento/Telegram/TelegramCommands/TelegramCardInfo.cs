@@ -20,6 +20,7 @@ namespace CoreSprint.Telegram.TelegramCommands
         private readonly ITrelloFacade _trelloFacade;
         private readonly ICardHelper _cardHelper;
         private readonly ISpreadsheetFacade _spreadsheetFacade;
+        private ISprintRunningHelper _sprintRunningHelper;
 
         public TelegramCardInfo(TelegramBot telegramBot, ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
             : base(telegramBot)
@@ -29,6 +30,7 @@ namespace CoreSprint.Telegram.TelegramCommands
             _trelloFacade = coreSprintFactory.GetTrelloFacade();
             _cardHelper = coreSprintFactory.GetCardHelper();
             _spreadsheetFacade = coreSprintFactory.GetSpreadsheetFacade();
+            _sprintRunningHelper = coreSprintFactory.GetSprintRunningHelper();
         }
 
         public override void Execute(Message message)
@@ -119,11 +121,11 @@ namespace CoreSprint.Telegram.TelegramCommands
 
             const string worksheetName = "SprintCorrente";
             var worksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetWorksheet(_spreadsheetId, worksheetName));
-            var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
-            var strStartDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(worksheet, 2, 2));
-            var strEndDate = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetCellValue(worksheet, 3, 2));
-            var startDate = Convert.ToDateTime(strStartDate, dateFormat);
-            var endDate = Convert.ToDateTime(strEndDate, dateFormat);
+
+            var sprintPeriod = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetSprintPeriod(worksheet));
+            var startDate = sprintPeriod["startDate"];
+            var endDate = sprintPeriod["endDate"];
+
             var cardName = _cardHelper.GetCardTitle(card);
             var estimate = _cardHelper.GetCardEstimate(card);
             var comments = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetCardComments(card)).ToList();
