@@ -53,11 +53,11 @@ namespace CoreSprint.Telegram.TelegramCommands
             foreach (var headerValue in headerReport)
             {
                 headerBuffer.Append(i++ % 2 == 0
-                    ? string.Format("{0}: ", headerValue.Value)
-                    : string.Format("{0}\r\n", headerValue.Value));
+                    ? $"{headerValue.Value}: "
+                    : $"{headerValue.Value}\r\n");
             }
 
-            SendToChat(message.Chat.Id, string.Format("{0}{1}", headerBuffer, messageResult));
+            SendToChat(message.Chat.Id, $"{headerBuffer}{messageResult}");
         }
 
         private static IEnumerable<string> GetParams(Message message)
@@ -89,11 +89,11 @@ namespace CoreSprint.Telegram.TelegramCommands
                     {
                         var lowerValue = reportCell.Value.ToLower().Trim();
                         addToReport = !@params.Any() || @params.Any(p => lowerValue.Contains(p) || p.Contains(lowerValue));
-                        value = string.Format("\r\n{0}\r\n{1}", reportCell.Value, "------------------");
+                        value = $"\r\n{reportCell.Value}\r\n{"------------------"}";
                     }
                     else //mesma linha
                     {
-                        value = string.Format("{0}: {1}", headers[(int)((i % sectionColumnLastHeader) - 1)], reportCell.Value);
+                        value = $"{headers[(int)((i % sectionColumnLastHeader) - 1)]}: {reportCell.Value}";
                     }
 
                     if (addToReport)

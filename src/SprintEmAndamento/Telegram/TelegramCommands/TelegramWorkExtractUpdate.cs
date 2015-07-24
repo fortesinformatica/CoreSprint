@@ -23,9 +23,7 @@ namespace CoreSprint.Telegram.TelegramCommands
             SendToChat(message.Chat.Id, "Vou processar o quadro do trello e atualizar a planilha. Assim que terminar aviso.");
             _workExtract.Execute();
             SendToChat(message.Chat.Id,
-                string.Format(
-                    "Atualização concluída em {0} para a planilha de horas trabalhadas.\r\nResposta à \"{1}\"",
-                    DateTime.Now.ToHumanReadable(), message.Text));
+                $"Atualização concluída em {DateTime.Now.ToHumanReadable()} para a planilha de horas trabalhadas.\r\nResposta à \"{message.Text}\"");
         }
     }
 }

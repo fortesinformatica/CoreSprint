@@ -15,7 +15,6 @@ namespace CoreSprint.Integration
 {
     public class WorkExtract : ICommand
     {
-        private readonly ICoreSprintFactory _sprintFactory;
         private readonly string _trelloBoardId;
         private readonly string _spreadsheetId;
         private readonly ITrelloFacade _trelloFacade;
@@ -25,7 +24,6 @@ namespace CoreSprint.Integration
 
         public WorkExtract(ICoreSprintFactory sprintFactory, string trelloBoardId, string spreadsheetId)
         {
-            _sprintFactory = sprintFactory;
             _trelloBoardId = trelloBoardId;
             _spreadsheetId = spreadsheetId;
             _trelloFacade = sprintFactory.GetTrelloFacade();

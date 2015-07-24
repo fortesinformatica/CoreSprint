@@ -45,22 +45,19 @@ namespace CoreSprint.Telegram.TelegramCommands
                 var filteredCards = FilterCards(cards, queryCards, queryResponsible).AsParallel();
 
                 SendToChat(chatId,
-                    string.Format(
-                        "Foram encontrados {0} cartões que atendem aos critérios consultados.\r\nAguarde um pouco enquanto processo as informações destes cartões...",
-                        filteredCards.Count()));
+                    $"Foram encontrados {filteredCards.Count()} cartões que atendem aos critérios consultados.\r\n" +
+                    "Aguarde um pouco enquanto processo as informações destes cartões...");
 
                 if (filteredCards.Any())
                 {
                     filteredCards.ForAll(card => SendToChat(chatId, MountCardInfo(card)));
-                    SendToChat(chatId, string.Format("Todos os cartões foram listados em resposta ao comando \"{0}\".", message.Text));
+                    SendToChat(chatId, $"Todos os cartões foram listados em resposta ao comando \"{message.Text}\".");
                 }
                 else
                 {
                     SendToChat(chatId,
-                        string.Format(
-                            "Não foi encontrado nenhum cartão para os responsáveis \"{0}\" que correspondam a consulta \"{1}\"",
-                            queryResponsible.Any() ? queryResponsible.Aggregate((text, next) => text + "; " + next) : "",
-                            queryCards.Any() ? queryCards.Aggregate((text, next) => text + "; " + next) : ""));
+                        $"Não foi encontrado nenhum cartão para os responsáveis \"{(queryResponsible.Any() ? queryResponsible.Aggregate((text, next) => text + "; " + next) : "")}\"" +
+                        $" que correspondam a consulta \"{(queryCards.Any() ? queryCards.Aggregate((text, next) => text + "; " + next) : "")}\"");
                 }
 
                 return;

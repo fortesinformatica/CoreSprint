@@ -31,7 +31,7 @@ namespace CoreSprint.Telegram.TelegramCommands
 
             Console.WriteLine(result == null
                 ? "Erro: Não foi possível enviar a mensagem para o chat!"
-                : string.Format("Mensagem enviada em {0}!", DateTime.Now.ToHumanReadable()));
+                : $"Mensagem enviada em {DateTime.Now.ToHumanReadable()}!");
         }
     }
 }

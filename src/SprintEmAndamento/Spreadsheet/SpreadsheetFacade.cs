@@ -19,7 +19,7 @@ namespace CoreSprint.Spreadsheet
             //TODO: tratar se está autenticado
             var spreadsheetQuery = new SpreadsheetQuery
             {
-                Uri = new Uri(string.Format("https://spreadsheets.google.com/feeds/spreadsheets/private/full/{0}", spreadsheetId))
+                Uri = new Uri($"https://spreadsheets.google.com/feeds/spreadsheets/private/full/{spreadsheetId}")
             };
             var spreadsheets = _connection.SpreadsheetService.Query(spreadsheetQuery);
             return spreadsheets.Entries.FirstOrDefault() as SpreadsheetEntry;
@@ -50,8 +50,7 @@ namespace CoreSprint.Spreadsheet
         {
             //TODO: tratar se está autenticado
             var worksheet = spreadsheet.Worksheets.Entries.FirstOrDefault(e => e.Title.Text == worksheetName);
-            if (worksheet != null)
-                worksheet.Delete();
+            worksheet?.Delete();
         }
 
         public WorksheetEntry GetWorksheet(string spreadsheetId, string worksheetName)

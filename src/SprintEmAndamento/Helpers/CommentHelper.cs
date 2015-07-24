@@ -14,7 +14,7 @@ namespace CoreSprint.Helpers
             //TODO: não deve ter trabalhado, pausa ou início simultâneos no mesmo comentário
             const string strDatePattern = @"[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]";
 
-            var strPatternWorked = string.Format(@">(.)*{0}", strDatePattern);
+            var strPatternWorked = $@">(.)*{strDatePattern}";
             var patternWorked = new Regex(strPatternWorked, RegexOptions.IgnoreCase);
             var matchWorked = patternWorked.Match(comment.Data.Text);
 
@@ -37,7 +37,7 @@ namespace CoreSprint.Helpers
             const string strWorkPattern = @">(\s)*(pausa|para|inicia)";
             const string strHourPattern = @"[0-2]?[0-9]:[0-5]?[0-9]";
 
-            var strStopedWork = string.Format(@"{0}(.)*{1}", strWorkPattern, strHourPattern);
+            var strStopedWork = $@"{strWorkPattern}(.)*{strHourPattern}";
             var stopWorkPattern = new Regex(strStopedWork);
             var matchStopWork = stopWorkPattern.Match(comment.Data.Text);
 
@@ -48,7 +48,7 @@ namespace CoreSprint.Helpers
                 var matchHourPattern = hourPattern.Match(matchStopWork.Value);
                 var hourText = matchHourPattern.Value.Split(':').Aggregate((text, next) => text.PadLeft(2, '0') + ":" + next.PadLeft(2, '0'));
                 var dateTime = comment.Date.ConvertUtcToFortalezaTimeZone();
-                var strDateStopWork = string.Format("{0}/{1}/{2} {3}:00", dateTime.Year, dateTime.Month, dateTime.Day, hourText);
+                var strDateStopWork = $"{dateTime.Year}/{dateTime.Month}/{dateTime.Day} {hourText}:00";
 
                 dateChanged = Convert.ToDateTime(strDateStopWork, dateFormat);
             }

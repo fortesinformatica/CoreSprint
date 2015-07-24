@@ -133,13 +133,13 @@ namespace CoreSprint.Spreadsheet
 
                 var spreadsheetQuery = new SpreadsheetQuery();
                 var spreadsheets = spreadsheetService.Query(spreadsheetQuery);
-                var spreadsheetEntry = spreadsheets.Entries.FirstOrDefault() as SpreadsheetEntry;
+                var spreadsheetEntry = (SpreadsheetEntry)spreadsheets.Entries.FirstOrDefault();
 
                 return true;
             }
             catch (GDataRequestException e)
             {
-                var message = e.InnerException != null ? e.InnerException.Message : "";
+                var message = e.InnerException?.Message ?? "";
                 if (message.Contains("(401) Unauthorized"))
                     return false;
                 throw;

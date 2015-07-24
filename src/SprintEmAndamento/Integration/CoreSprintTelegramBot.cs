@@ -6,7 +6,6 @@ using System.Threading;
 using CoreSprint.Factory;
 using CoreSprint.Telegram;
 using CoreSprint.Telegram.TelegramCommands;
-using CoreSprint.Trello;
 using NetTelegramBotApi;
 using NetTelegramBotApi.Requests;
 using NetTelegramBotApi.Types;
@@ -74,7 +73,7 @@ namespace CoreSprint.Integration
         {
             updates.ForAll(update =>
             {
-                var message = string.Format("No momento estou ocupado para executar o comando \"{0}\". Assim que desocupar aviso.", update.Message.Text);
+                var message = $"No momento estou ocupado para executar o comando \"{update.Message.Text}\". Assim que desocupar aviso.";
                 _unprocessedUpdates.Add(update);
                 TelegramCommand.SendMessageToChat(_telegramBot, update.Message.Chat.Id, message);
             });
@@ -100,7 +99,7 @@ namespace CoreSprint.Integration
                             }
                             catch (Exception e)
                             {
-                                var msgError = string.Format("Ocorreu um erro ao executar o comando: {0}\r\n{1}", e.Message, e.StackTrace);
+                                var msgError = $"Ocorreu um erro ao executar o comando: {e.Message}\r\n{e.StackTrace}";
                                 Console.WriteLine(msgError);
 
                                 command.SendToChat(update.Message.Chat.Id, "Ocorreu um erro ao executar o comando!");

@@ -37,13 +37,13 @@ namespace CoreSprint.Helpers
             _delimiter = ";";
 
             _strPriorityPattern = @"\[i[0-9]+-u[0-9]+\]";
-            _strEstimatePattern = string.Format(@"\{{(\s)*({0})(\s)*hora[\sa-zA-Z]*\}}", _strNumberPattern);
+            _strEstimatePattern = $@"\{{(\s)*({_strNumberPattern})(\s)*hora[\sa-zA-Z]*\}}";
 
             _numberPattern = new Regex(_strNumberPattern, RegexOptions.IgnoreCase);
             _remainderPattern =
-                new Regex(string.Format(@">(\s)*(restam|restante)(\s)+{0}", _strNumberPattern),
+                new Regex($@">(\s)*(restam|restante)(\s)+{_strNumberPattern}",
                     RegexOptions.IgnoreCase);
-            _workedPattern = new Regex(string.Format(@">(\s)*trabalhado(\s)+{0}", _strNumberPattern),
+            _workedPattern = new Regex($@">(\s)*trabalhado(\s)+{_strNumberPattern}",
                 RegexOptions.IgnoreCase);
             _startWorkPattern = new Regex(@">(\s)*inicia");
             _stopWorkPattern = new Regex(@">(\s)*(pausa|para)");

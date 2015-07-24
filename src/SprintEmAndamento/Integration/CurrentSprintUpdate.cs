@@ -156,7 +156,7 @@ namespace CoreSprint.Integration
             return result;
         }
 
-        private static void Calculate(Dictionary<string, double> information, string label, double value)
+        private static void Calculate(IDictionary<string, double> information, string label, double value)
         {
             if (!information.ContainsKey(label))
                 information.Add(label, 0D);

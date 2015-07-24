@@ -7,7 +7,7 @@ namespace CoreSprint.Extensions
     {
         public static string ToHumanReadable(this DateTime dateTime)
         {
-            var dateTimeStr = string.Format("{0} {1}", dateTime.ToShortDateString(), dateTime.ToShortTimeString());
+            var dateTimeStr = $"{dateTime.ToShortDateString()} {dateTime.ToShortTimeString()}";
             return dateTimeStr;
         }
 

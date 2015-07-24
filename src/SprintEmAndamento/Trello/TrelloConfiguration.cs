@@ -11,8 +11,6 @@ namespace CoreSprint.Trello
     {
         private const string TRELLO_APP_KEY_URL = "https://trello.com/app-key";
         private const string TRELLO_LOGIN_URL = "https://trello.com/login";
-        private static bool navigated = false;
-
 
         public static void Configure()
         {
@@ -35,7 +33,7 @@ namespace CoreSprint.Trello
         private static string DataGetter(HtmlDocument document)
         {
             var elementById = document.GetElementById("key");
-            return elementById != null ? elementById.Attributes["value"].Value : null;
+            return elementById?.Attributes["value"].Value;
         }
 
         public static Dictionary<string, string> GetConfiguration()
@@ -112,7 +110,7 @@ namespace CoreSprint.Trello
         private static string UserTokenGetter(HtmlDocument document)
         {
             var node = document.DocumentNode.SelectSingleNode("//pre");
-            return node == null ? null : node.InnerText.Trim();
+            return node?.InnerText.Trim();
         }
     }
 }
