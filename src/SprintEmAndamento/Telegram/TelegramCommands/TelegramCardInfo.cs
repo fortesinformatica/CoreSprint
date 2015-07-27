@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -20,7 +19,8 @@ namespace CoreSprint.Telegram.TelegramCommands
         private readonly ITrelloFacade _trelloFacade;
         private readonly ICardHelper _cardHelper;
         private readonly ISpreadsheetFacade _spreadsheetFacade;
-        private ISprintRunningHelper _sprintRunningHelper;
+        private readonly ISprintRunningHelper _sprintRunningHelper;
+        private readonly ITelegramHelper _telegramHelper;
 
         public TelegramCardInfo(TelegramBot telegramBot, ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
             : base(telegramBot)
@@ -31,12 +31,13 @@ namespace CoreSprint.Telegram.TelegramCommands
             _cardHelper = coreSprintFactory.GetCardHelper();
             _spreadsheetFacade = coreSprintFactory.GetSpreadsheetFacade();
             _sprintRunningHelper = coreSprintFactory.GetSprintRunningHelper();
+            _telegramHelper = coreSprintFactory.GetTelegramHelper();
         }
 
         public override void Execute(Message message)
         {
             var queryCards = GetQueryCards(message.Text).ToList();
-            var queryResponsible = GetQueryResponsible(message.Text).ToList();
+            var queryResponsible = _telegramHelper.GetQueryResponsible(message.Text, "card_info").ToList();
             var chatId = message.Chat.Id;
 
             if (queryCards.Any() || queryResponsible.Any())
@@ -71,13 +72,6 @@ namespace CoreSprint.Telegram.TelegramCommands
         private IEnumerable<Card> GetCards()
         {
             return ExecutionHelper.ExecuteAndRetryOnFail(() => _trelloFacade.GetCards(_trelloBoardId));
-        }
-
-        private IEnumerable<string> GetQueryResponsible(string message)
-        {
-            var commandText = message.Split(' ').First(s => !string.IsNullOrWhiteSpace(s));
-            commandText = commandText.Replace("/card_info", ""); //TODO: não há garantias que este será o nome do comando
-            return commandText.Split('_').Where(s => !string.IsNullOrWhiteSpace(s));
         }
 
         private static IEnumerable<string> GetQueryCards(string message)

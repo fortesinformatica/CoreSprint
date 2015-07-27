@@ -84,7 +84,7 @@ namespace CoreSprint.Spreadsheet
         public string GetCellValue(WorksheetEntry worksheet, uint row, uint col)
         {
             var cellEntry = GetCellsValues(worksheet, row, row, col, col).FirstOrDefault();
-            return cellEntry != null ? cellEntry.InputValue : "";
+            return cellEntry?.InputValue ?? "";
         }
 
         public IEnumerable<CellEntry> GetCellsValues(WorksheetEntry worksheet, uint minrow, uint maxrow, uint mincol, uint maxcol)

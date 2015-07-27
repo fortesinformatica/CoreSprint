@@ -36,11 +36,12 @@ namespace CoreSprint.Integration
         private IDictionary<string, ITelegramCommand> GetCommands()
         {
             /*
-             * report - Relatório do sprint atual com horas trabalhadas e pendentes por profissional
-             * update_report - Atualiza planilha do sprint atual com as informações do quadro de Sprint do Trello
-             * update_cards_report - Atualiza lista de cartões do Trello na planilha do sprint atual
-             * update_work_extract - Atualiza a planilha de horas trabalhadas com o extrato do sprint
-             * card_info - Recupera informações de estimativa e tempo trabalhado do cartão
+             report - Relatório do sprint atual com horas trabalhadas e pendentes por profissional
+             update_report - Atualiza planilha do sprint atual com as informações do quadro de Sprint do Trello
+             update_cards_report - Atualiza lista de cartões do Trello na planilha do sprint atual
+             update_work_extract - Atualiza a planilha de horas trabalhadas com o extrato do sprint
+             card_info - Recupera informações de estimativa e tempo trabalhado do cartão
+             card_working - Recupera qual cartão um ou mais profissionais estão trabalhando
              */
             return new Dictionary<string, ITelegramCommand>
             {
@@ -48,7 +49,8 @@ namespace CoreSprint.Integration
                 {"/update_report", new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
                 {"/update_cards_report", new TelegramListSprintCards(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
                 {"/update_work_extract", new TelegramWorkExtractUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
-                {"/card_info", new TelegramCardInfo(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)}
+                {"/card_info", new TelegramCardInfo(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
+                {"/card_working", new TelegramWorkingCard(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)}
             };
         }
 

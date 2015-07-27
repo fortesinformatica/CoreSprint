@@ -22,6 +22,7 @@ namespace CoreSprint.Helpers
         Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime until);
         Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime startDate, DateTime endDate);
         Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, List<CommentCardAction> comments, string professional, DateTime startDate, DateTime endDate);
-        IList<CardWorkDto> GetCardWorkExtract(Card card, DateTime startDate, DateTime endDate);
+        IEnumerable<CardWorkDto> GetCardWorkExtract(Card card, DateTime startDate, DateTime endDate, string professional = null);
+        IEnumerable<CardWorkDto> GetCardsWorkExtract(IEnumerable<Card> cards, DateTime startDate, DateTime endDate, string professional = null);
     }
 }

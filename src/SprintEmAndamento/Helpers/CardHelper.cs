@@ -23,8 +23,6 @@ namespace CoreSprint.Helpers
         private readonly Regex _remainderPattern;
         private readonly Regex _workedPattern;
         private readonly Regex _numberPattern;
-        private readonly Regex _startWorkPattern;
-        private readonly Regex _stopWorkPattern;
         private readonly CultureInfo _cultureInfoEnUs;
 
         public CardHelper(ITrelloFacade trelloFacade, ICommentHelper commentHelper)
@@ -45,8 +43,6 @@ namespace CoreSprint.Helpers
                     RegexOptions.IgnoreCase);
             _workedPattern = new Regex($@">(\s)*trabalhado(\s)+{_strNumberPattern}",
                 RegexOptions.IgnoreCase);
-            _startWorkPattern = new Regex(@">(\s)*inicia");
-            _stopWorkPattern = new Regex(@">(\s)*(pausa|para)");
 
             _cultureInfoEnUs = new CultureInfo("en-US");
         }
@@ -79,8 +75,7 @@ namespace CoreSprint.Helpers
             var commentCardActions = comments as IList<CommentCardAction> ?? comments.ToList();
             var cardActions = commentCardActions as List<CommentCardAction>;
 
-            if (cardActions != null)
-                cardActions.Sort(sortComparer);
+            cardActions?.Sort(sortComparer);
 
             return cardActions;
         }
@@ -166,18 +161,28 @@ namespace CoreSprint.Helpers
                 });
         }
 
-        public IList<CardWorkDto> GetCardWorkExtract(Card card, DateTime startDate, DateTime endDate)
+        public IEnumerable<CardWorkDto> GetCardWorkExtract(Card card, DateTime startDate, DateTime endDate, string professional = null)
         {
             var extract = new List<CardWorkDto>();
             var comments = GetCardComments(card).AsParallel().AsOrdered();
             var workedControl = new Dictionary<string, DateTime>();
 
+            professional = professional?.ToLower();
+
+            comments = professional == null
+                ? comments
+                : comments.Where(c =>
+                {
+                    var professionalInComment = c.MemberCreator.FullName.ToLower();
+                    return professionalInComment.Contains(professional) || professional.Contains(professionalInComment);
+                });
+
             foreach (var comment in comments)
             {
                 var dateInComment = _commentHelper.GetDateInComment(comment);
                 var matchWork = _workedPattern.Match(comment.Data.Text).Success ||
-                                _startWorkPattern.Match(comment.Data.Text).Success ||
-                                _stopWorkPattern.Match(comment.Data.Text).Success;
+                                _commentHelper.HasStartPattern(comment.Data.Text) ||
+                                _commentHelper.HasStopPattern(comment.Data.Text);
 
                 if (matchWork && dateInComment >= startDate && dateInComment <= endDate)
                 {
@@ -199,6 +204,30 @@ namespace CoreSprint.Helpers
             }
 
             return extract;
+        }
+
+        public IEnumerable<CardWorkDto> GetCardsWorkExtract(IEnumerable<Card> cards, DateTime startDate, DateTime endDate, string professional = null)
+        {
+            var i = 0;
+            IEnumerable<CardWorkDto> allWork = new List<CardWorkDto>();
+            var enumerableCards = cards as IList<Card> ?? cards.ToList();
+            var count = enumerableCards.Count();
+
+            allWork =
+                enumerableCards.AsParallel().AsOrdered().Aggregate(allWork,
+                    (current, card) =>
+                    {
+                        Console.WriteLine("Analisando cartão ({0}/{1}) {2}", ++i, count, card.Name);
+                        return
+                            current.Concat(
+                                ExecutionHelper.ExecuteAndRetryOnFail(
+                                    () => GetCardWorkExtract(card, startDate, endDate, professional)));
+                    })
+                    .OrderBy(w => w.Professional)
+                    .ThenBy(w => w.CardLink)
+                    .ThenBy(w => w.WorkAt)
+                    .ToList();
+            return allWork;
         }
 
         private Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, Func<CommentCardAction, bool> validateComment)
@@ -245,15 +274,13 @@ namespace CoreSprint.Helpers
         private double CalculateRunningWorked(CommentCardAction comment, IDictionary<string, DateTime> workedControl)
         {
             double runningWorked = 0;
-            var matchStartedWork = _startWorkPattern.Match(comment.Data.Text);
 
-            if (matchStartedWork.Success)
+            if (_commentHelper.HasStartPattern(comment.Data.Text))
                 workedControl[comment.IdMemberCreator] = _commentHelper.GetDateInComment(comment);
 
             if (workedControl.ContainsKey(comment.IdMemberCreator))
             {
-                var matchStopedWork = _stopWorkPattern.Match(comment.Data.Text);
-                if (matchStopedWork.Success)
+                if (_commentHelper.HasStopPattern(comment.Data.Text))
                 {
                     var dateTimeWorkStarted = workedControl[comment.IdMemberCreator];
                     var workRunning = _commentHelper.GetDateInComment(comment) - dateTimeWorkStarted;

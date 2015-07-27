@@ -36,33 +36,18 @@ namespace CoreSprint.Integration
 
         public void Execute()
         {
-            var cards = ExecutionHelper.ExecuteAndRetryOnFail(() => _trelloFacade.GetCards(_trelloBoardId));
+            var worksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _worksheetHelper.RedoWorksheet(_spreadsheetId, "HorasTrabalhadas", GetHeadersName()));
             var sprintWorksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetWorksheet(_spreadsheetId, "SprintCorrente"));
             var sprintPeriod = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetSprintPeriod(sprintWorksheet));
+            var cards = ExecutionHelper.ExecuteAndRetryOnFail(() => _trelloFacade.GetCards(_trelloBoardId));
             var startDate = sprintPeriod["startDate"];
             var endDate = sprintPeriod["endDate"];
+            var allWork = _cardHelper.GetCardsWorkExtract(cards, startDate, endDate);
+            var cardWorkDtos = allWork as CardWorkDto[] ?? allWork.ToArray();
+            var count = cardWorkDtos.Count();
             var i = 0;
-            IEnumerable<CardWorkDto> allWork = new List<CardWorkDto>();
 
-            var worksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _worksheetHelper.RedoWorksheet(_spreadsheetId, "HorasTrabalhadas", GetHeadersName()));
-            var enumerable = cards as IList<Card> ?? cards.ToList();
-            var count = enumerable.Count();
-
-            allWork =
-                enumerable.AsParallel().AsOrdered().Aggregate(allWork,
-                    (current, card) =>
-                    {
-                        Console.WriteLine("Analisando cartão ({0}/{1}) {2}", ++i, count, card.Name);
-                        return current.Concat(ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetCardWorkExtract(card, startDate, endDate)));
-                    })
-                    .OrderBy(w => w.Professional)
-                    .ThenBy(w => w.WorkAt)
-                    .ToList();
-
-            count = allWork.Count();
-            i = 0;
-
-            foreach (var work in allWork.AsParallel().AsOrdered())
+            foreach (var work in cardWorkDtos.AsParallel().AsOrdered())
             {
                 Console.WriteLine("Inserindo registro de trabalho ({0}/{1})", ++i, count);
 
@@ -72,6 +57,7 @@ namespace CoreSprint.Integration
                 ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.InsertInWorksheet(worksheet, row));
             }
         }
+
 
         private static ListEntry MountWorksheetRow(CardWorkDto cardWork)
         {

@@ -11,7 +11,9 @@ namespace CoreSprint.Factory
         ITrelloFacade GetTrelloFacade();
         ISpreadsheetFacade GetSpreadsheetFacade();
         ICardHelper GetCardHelper();
+        ICommentHelper GetCommentHelper();
         IWorksheetHelper GetWorksheetHelper();
         ISprintRunningHelper GetSprintRunningHelper();
+        ITelegramHelper GetTelegramHelper();
     }
 }

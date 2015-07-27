@@ -17,6 +17,8 @@ namespace CoreSprint
         public static string TelegramConfigPath => RootPathData + "telegram.config";
         public static string TelegramDataPath => RootPathData + "telegram.data";
 
+        public static string TelegramBotName => "coresprint_bot";
+
         public static void ConfigureRemoteIntegrations()
         {
             if (!TrelloConfiguration.HasConfiguration())

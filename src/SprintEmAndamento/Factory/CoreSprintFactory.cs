@@ -56,5 +56,10 @@ namespace CoreSprint.Factory
         {
             return new SprintRunningHelper(GetSpreadsheetFacade());
         }
+
+        public ITelegramHelper GetTelegramHelper()
+        {
+            return new TelegramHelper();
+        }
     }
 }

@@ -9,6 +9,18 @@ namespace CoreSprint.Helpers
 {
     public class CommentHelper : ICommentHelper
     {
+        public bool HasStartPattern(string commentText)
+        {
+            var startWorkPattern = new Regex(@">(\s)*inicia");
+            return startWorkPattern.Match(commentText).Success;
+        }
+
+        public bool HasStopPattern(string commentText)
+        {
+            var stopWorkPattern = new Regex(@">(\s)*(pausa|para)");
+            return stopWorkPattern.Match(commentText).Success;
+        }
+
         public DateTime GetDateInComment(CommentCardAction comment)
         {
             //TODO: não deve ter trabalhado, pausa ou início simultâneos no mesmo comentário
