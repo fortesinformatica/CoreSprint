@@ -46,33 +46,41 @@ namespace CoreSprint.Telegram.TelegramCommands
 
             var reportCells = _spreadsheetFacade.GetCellsValues(worksheet, sectionFirstLine, sectionLastLine, 1, sectionColumnLastHeader);
 
-            var enumerableProfessionals = professionals as string[] ?? professionals.ToArray();
-            var report = GetReport(reportCells, enumerableProfessionals.Any() ? enumerableProfessionals : new[] { "total" }, sectionColumnLastHeader);
-
-            //add header
             var headerReport = _spreadsheetFacade.GetCellsValues(worksheet, 2, 5, 1, 2);
-            var strReport = new StringBuilder($"Relatório do Sprint => {report["title"]}\r\n=============================================\r\n");
-            var availability = _sprintRunningHelper.GetAvailabilityFromNow(worksheet, enumerableProfessionals).Sum(av => av.Value);
+            var strReportHeader = new StringBuilder("Informações do Sprint\r\n=============================================\r\n");
             var i = 0;
 
             foreach (var headerValue in headerReport)
             {
-                strReport.Append(i++ % 2 == 0
+                strReportHeader.Append(i++ % 2 == 0
                     ? $"{headerValue.Value} => "
                     : $"{headerValue.Value}\r\n");
             }
 
-            strReport.Append($"Horas disponíveis => {availability}\r\n");
+            SendToChat(message.Chat.Id, strReportHeader.ToString());
 
-            foreach (var keyPar in report.Where(keyPar => !keyPar.Key.Equals("title")))
-            {
-                strReport.Append($"{keyPar.Key} => {keyPar.Value}\r\n");
-            }
+            professionals = professionals.Any() ? professionals : new[] { "total" };
 
-            SendToChat(message.Chat.Id, strReport.ToString());
+            professionals.AsParallel().ForAll(professional =>
+             {
+                 var report = GetReport(reportCells, string.IsNullOrWhiteSpace(professional) ? "total" : professional, sectionColumnLastHeader);
+
+                 //add header
+                 var availability = _sprintRunningHelper.GetAvailabilityFromNow(worksheet, new[] { professional }).Sum(av => av.Value);
+                 var strReport = new StringBuilder($"Relatório do Sprint => {report["title"]}\r\n=============================================\r\n");
+
+                 strReport.Append($"Horas disponíveis => {availability}\r\n");
+
+                 foreach (var keyPar in report.Where(keyPar => !keyPar.Key.Equals("title")))
+                 {
+                     strReport.Append($"{keyPar.Key} => {keyPar.Value}\r\n");
+                 }
+
+                 SendToChat(message.Chat.Id, strReport.ToString());
+             });
         }
 
-        private static IDictionary<string, string> GetReport(IEnumerable<CellEntry> reportCells, IEnumerable<string> professionals, uint sectionColumnLastHeader)
+        private static IDictionary<string, string> GetReport(IEnumerable<CellEntry> reportCells, string professional, uint sectionColumnLastHeader)
         {
             var i = 1;
             var headers = new List<string>();
@@ -90,8 +98,7 @@ namespace CoreSprint.Telegram.TelegramCommands
                     if (i % sectionColumnLastHeader == 0) //nova linha
                     {
                         var lowerValue = reportCell.Value.ToLower().Trim();
-                        var enumerableParams = professionals as string[] ?? professionals.ToArray();
-                        addToReport = !enumerableParams.Any() || enumerableParams.Any(p => lowerValue.Contains(p) || p.Contains(lowerValue));
+                        addToReport = string.IsNullOrWhiteSpace(professional) || lowerValue.Contains(professional) || professional.Contains(lowerValue);
 
                         if (addToReport)
                             report["title"] = reportCell.Value;
