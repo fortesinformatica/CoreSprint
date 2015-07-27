@@ -16,6 +16,7 @@ namespace CoreSprint.Telegram.TelegramCommands
         private readonly string _spreadsheetId;
         private readonly ISpreadsheetFacade _spreadsheetFacade;
         private readonly ISprintRunningHelper _sprintRunningHelper;
+        private readonly ITelegramHelper _telegramHelper;
 
         public TelegramCurrentSprintReport(TelegramBot telegramBot, ICoreSprintFactory factory, string spreadsheetId)
             : base(telegramBot)
@@ -23,6 +24,7 @@ namespace CoreSprint.Telegram.TelegramCommands
             _spreadsheetId = spreadsheetId;
             _spreadsheetFacade = factory.GetSpreadsheetFacade();
             _sprintRunningHelper = factory.GetSprintRunningHelper();
+            _telegramHelper = factory.GetTelegramHelper();
         }
 
         public override void Execute(Message message)
@@ -33,7 +35,7 @@ namespace CoreSprint.Telegram.TelegramCommands
 
             var spreadsheet = _spreadsheetFacade.GetSpreadsheet(_spreadsheetId);
             var worksheet = _spreadsheetFacade.GetWorksheet(spreadsheet, worksheetName);
-            var @params = GetParams(message);
+            var professionals = _telegramHelper.GetQueryResponsible(message.Text, "report");
 
             //TODO: deduzir linhas e colunas max e min ao invés de utilizar valores fixos
             var sprintRunningSection = _sprintRunningHelper.GetSectionLinesPosition(worksheet, "Relatório de andamento do sprint");
@@ -44,36 +46,38 @@ namespace CoreSprint.Telegram.TelegramCommands
 
             var reportCells = _spreadsheetFacade.GetCellsValues(worksheet, sectionFirstLine, sectionLastLine, 1, sectionColumnLastHeader);
 
-            var messageResult = GetReport(reportCells, @params.Any() ? @params : new[] { "total" }, sectionColumnLastHeader);
+            var enumerableProfessionals = professionals as string[] ?? professionals.ToArray();
+            var report = GetReport(reportCells, enumerableProfessionals.Any() ? enumerableProfessionals : new[] { "total" }, sectionColumnLastHeader);
 
             //add header
-            var headerReport = _spreadsheetFacade.GetCellsValues(worksheet, 2, 4, 1, 2);
-            var headerBuffer = new StringBuilder("Relatório do Sprint\r\n=================\r\n");
+            var headerReport = _spreadsheetFacade.GetCellsValues(worksheet, 2, 5, 1, 2);
+            var strReport = new StringBuilder($"Relatório do Sprint => {report["title"]}\r\n=============================================\r\n");
+            var availability = _sprintRunningHelper.GetAvailabilityFromNow(worksheet, enumerableProfessionals).Sum(av => av.Value);
             var i = 0;
+
             foreach (var headerValue in headerReport)
             {
-                headerBuffer.Append(i++ % 2 == 0
-                    ? $"{headerValue.Value}: "
+                strReport.Append(i++ % 2 == 0
+                    ? $"{headerValue.Value} => "
                     : $"{headerValue.Value}\r\n");
             }
 
-            SendToChat(message.Chat.Id, $"{headerBuffer}{messageResult}");
+            strReport.Append($"Horas disponíveis => {availability}\r\n");
+
+            foreach (var keyPar in report.Where(keyPar => !keyPar.Key.Equals("title")))
+            {
+                strReport.Append($"{keyPar.Key} => {keyPar.Value}\r\n");
+            }
+
+            SendToChat(message.Chat.Id, strReport.ToString());
         }
 
-        private static IEnumerable<string> GetParams(Message message)
+        private static IDictionary<string, string> GetReport(IEnumerable<CellEntry> reportCells, IEnumerable<string> professionals, uint sectionColumnLastHeader)
         {
-            var @params = message.Text.Split(' ').ToList();
-            @params.RemoveAt(0);
-            return @params.Select(p => p.ToLower().Trim());
-        }
-
-        private static string GetReport(IEnumerable<CellEntry> reportCells, IEnumerable<string> @params, uint sectionColumnLastHeader)
-        {
-            //TODO: deduzir linhas e colunas max e min ao invés de utilizar valores fixos
-            var stringBuffer = new StringBuilder();
             var i = 1;
             var headers = new List<string>();
             var addToReport = false;
+            var report = new Dictionary<string, string>();
 
             foreach (var reportCell in reportCells)
             {
@@ -83,30 +87,24 @@ namespace CoreSprint.Telegram.TelegramCommands
                 }
                 else
                 {
-                    var value = "";
-
                     if (i % sectionColumnLastHeader == 0) //nova linha
                     {
                         var lowerValue = reportCell.Value.ToLower().Trim();
-                        addToReport = !@params.Any() || @params.Any(p => lowerValue.Contains(p) || p.Contains(lowerValue));
-                        value = $"\r\n{reportCell.Value}\r\n{"------------------"}";
-                    }
-                    else //mesma linha
-                    {
-                        value = $"{headers[(int)((i % sectionColumnLastHeader) - 1)]}: {reportCell.Value}";
-                    }
+                        var enumerableParams = professionals as string[] ?? professionals.ToArray();
+                        addToReport = !enumerableParams.Any() || enumerableParams.Any(p => lowerValue.Contains(p) || p.Contains(lowerValue));
 
-                    if (addToReport)
+                        if (addToReport)
+                            report["title"] = reportCell.Value;
+                    }
+                    else if (addToReport) //mesma linha
                     {
-                        stringBuffer.Append(value + "\r\n");
-                        Console.WriteLine(value);
+                        report.Add(headers[(int)((i % sectionColumnLastHeader) - 1)], reportCell.Value);
                     }
                 }
 
                 i++;
             }
-            Console.WriteLine();
-            return stringBuffer.ToString();
+            return report;
         }
     }
 }
