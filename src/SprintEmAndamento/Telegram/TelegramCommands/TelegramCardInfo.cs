@@ -95,7 +95,7 @@ namespace CoreSprint.Telegram.TelegramCommands
             var qResponsible = queryResponsible as IList<string> ?? queryResponsible.ToList();
 
             cards = enumerableQueryCards.Any()
-                ? cards.Where(c => enumerableQueryCards.Any(q => c.Url.ToLower().Contains(q.ToLower()) || c.Name.ToLower().Contains(q.ToLower())))  
+                ? cards.Where(c => enumerableQueryCards.Any(q => c.Url.ToLower().Contains(q.ToLower()) || c.Name.ToLower().Contains(q.ToLower())))
                 : cards;
 
             cards = qResponsible.Any()
@@ -123,20 +123,20 @@ namespace CoreSprint.Telegram.TelegramCommands
             var cardName = _cardHelper.GetCardTitle(card);
             var estimate = _cardHelper.GetCardEstimate(card);
             var comments = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetCardComments(card)).ToList();
+            var workedAndRemainderBeforeSprint = _cardHelper.GetWorkedAndRemainder(estimate, comments, startDate);
             var workedAndRemainder = _cardHelper.GetWorkedAndRemainder(estimate, comments, endDate);
             var workedAndRemainderInSprint = _cardHelper.GetWorkedAndRemainder(estimate, comments, startDate, endDate);
             var workedInSprint = workedAndRemainderInSprint["worked"].ToString(CultureInfo.InvariantCulture);
-            var worked = workedAndRemainder["worked"].ToString(CultureInfo.InvariantCulture)
-                .Replace(".", ",");
-            var remainder =
-                workedAndRemainder["remainder"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var worked = workedAndRemainder["worked"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var remainder = workedAndRemainder["remainder"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var remainderBeforeSprint = workedAndRemainderBeforeSprint["remainder"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
             var status = _cardHelper.GetStatus(card);
             var responsibles = _cardHelper.GetResponsible(card);
 
             //TODO: ajustar ordem
             var message = string.Format(
-                "Cartão: {0} ({1})\r\n-------------------\r\nResponsável: {6}\r\nStatus: {5}\r\nEstimado: {2}\r\nTrabalhado: {3}\r\nTrabalhado no Sprint: {7}\r\nPendente: {4}",
-                cardName, card.Url, estimate, worked, remainder, status, responsibles, workedInSprint);
+                "Cartão: {0} ({1})\r\n-------------------\r\nResponsável: {6}\r\nStatus: {5}\r\nEstimado: {2}\r\nTrabalhado: {3}\r\nTrabalhado no Sprint: {7}\r\nPendente no início do Sprint: {8}\r\nPendente: {4}",
+                cardName, card.Url, estimate, worked, remainder, status, responsibles, workedInSprint, remainderBeforeSprint);
 
             return message;
         }
