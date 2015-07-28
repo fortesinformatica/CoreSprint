@@ -75,7 +75,7 @@ namespace CoreSprint.Helpers
             {
                 var i1 = i;
                 var professional = sectionLines.Where(sl => sl.Value == i1).Select(sl => sl.Key).First().ToLower();
-                var enumerableProfessionals = professionals as string[] ?? professionals.ToArray();
+                var enumerableProfessionals = professionals?.ToArray() ?? new string[0];
 
                 if (!enumerableProfessionals.Any() || enumerableProfessionals.Any(ep => ep.ToLower().Contains(professional) || professional.Contains(ep.ToLower())))
                 {

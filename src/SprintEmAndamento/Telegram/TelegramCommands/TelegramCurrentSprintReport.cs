@@ -46,8 +46,10 @@ namespace CoreSprint.Telegram.TelegramCommands
 
             var reportCells = _spreadsheetFacade.GetCellsValues(worksheet, sectionFirstLine, sectionLastLine, 1, sectionColumnLastHeader);
 
-            var headerReport = _spreadsheetFacade.GetCellsValues(worksheet, 2, 5, 1, 2);
-            var strReportHeader = new StringBuilder("Informações do Sprint\r\n=============================================\r\n");
+            var headerReport =
+                _spreadsheetFacade.GetCellsValues(worksheet, 2, 5, 1, 2)
+                    .Concat(_spreadsheetFacade.GetCellsValues(worksheet, 8, 8, 3, 4));
+            var strReportHeader = new StringBuilder("Informações do Sprint\r\n===================================\r\n");
             var i = 0;
 
             foreach (var headerValue in headerReport)
@@ -66,8 +68,9 @@ namespace CoreSprint.Telegram.TelegramCommands
                  var report = GetReport(reportCells, string.IsNullOrWhiteSpace(professional) ? "total" : professional, sectionColumnLastHeader);
 
                  //add header
-                 var availability = _sprintRunningHelper.GetAvailabilityFromNow(worksheet, new[] { professional }).Sum(av => av.Value);
-                 var strReport = new StringBuilder($"Relatório do Sprint => {report["title"]}\r\n=============================================\r\n");
+                 var strProfessionals = professional.Equals("total") ? null : new[] {professional};
+                 var availability = _sprintRunningHelper.GetAvailabilityFromNow(worksheet, strProfessionals).Sum(av => av.Value);
+                 var strReport = new StringBuilder($"Relatório do Sprint => {report["title"]}\r\n===================================\r\n");
 
                  strReport.Append($"Horas disponíveis => {availability}\r\n");
 
