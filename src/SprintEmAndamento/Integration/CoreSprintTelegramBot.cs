@@ -17,8 +17,9 @@ namespace CoreSprint.Integration
         private readonly CoreSprintFactory _sprintFactory;
         private readonly TelegramBot _telegramBot;
         private static List<Update> _unprocessedUpdates;
-        private static int _maxRunningCommands = 3;
-        public static int RunningCommands;
+        private static int _maxRunningCommands = 10;
+        private static int _countRunningCommands;
+        private static readonly IList<string> RunningCommands = new List<string>();
 
         public CoreSprintTelegramBot(CoreSprintFactory sprintFactory)
         {
@@ -33,7 +34,34 @@ namespace CoreSprint.Integration
             _unprocessedUpdates = _unprocessedUpdates ?? new List<Update>();
         }
 
-        private IDictionary<string, ITelegramCommand> GetCommands()
+        public void Execute()
+        {
+            //NetTelegramBotApi.Requests
+            var updates = GetUpdates().AsParallel().AsOrdered();
+            var telegramCommands = GetCommands();
+
+            if (updates.Any())
+            {
+                SetLastUpdateId(updates.Max(u => u.UpdateId));
+
+                updates =
+                    updates.Where(
+                        u => telegramCommands.Any(c => u.Message.Text.Trim().StartsWith($"/{c.Name.Trim().ToLower()}")));
+
+                if (updates.Any())
+                {
+                    foreach (var update in updates)
+                    {
+                        if (CheckIfOccupied(telegramCommands, update))
+                            SayOccupied(update);
+                        else
+                            ExecuteInNewThread(ExecuteCommands(update));
+                    }
+                }
+            }
+        }
+
+        private IEnumerable<ITelegramCommand> GetCommands()
         {
             /*
              report - Relatório do sprint atual com horas trabalhadas e pendentes por profissional
@@ -43,70 +71,59 @@ namespace CoreSprint.Integration
              card_info - Recupera informações de estimativa e tempo trabalhado do cartão
              card_working - Recupera qual cartão um ou mais profissionais estão trabalhando
              */
-            return new Dictionary<string, ITelegramCommand>
+            return new List<ITelegramCommand>
             {
-                {"/report", new TelegramCurrentSprintReport(_telegramBot, _sprintFactory, CoreSprintApp.SpreadsheetId)},
-                {"/update_report", new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
-                {"/update_cards_report", new TelegramListSprintCards(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
-                {"/update_work_extract", new TelegramWorkExtractUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
-                {"/card_info", new TelegramCardInfo(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)},
-                {"/card_working", new TelegramWorkingCard(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)}
+                new TelegramCurrentSprintReport(_telegramBot, _sprintFactory, CoreSprintApp.SpreadsheetId),
+                new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramListSprintCards(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramWorkExtractUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramCardInfo(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramWorkingCard(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)
             };
         }
 
-        public void Execute()
+        private static bool CheckIfOccupied(IEnumerable<ITelegramCommand> telegramCommands, Update update)
         {
-            //NetTelegramBotApi.Requests
-            var updates = GetUpdates().AsParallel().AsOrdered();
-
-            var anyNewUpdates = updates.Any();
-
-            if (anyNewUpdates)
-                SetLastUpdateId(updates.Max(u => u.UpdateId));
-
-            if (anyNewUpdates && updates.Any(u => u.Message.Text.Trim().StartsWith("/")))
-                if (RunningCommands >= _maxRunningCommands)
-                    SayOccupied(updates);
-                else
-                    ExecuteInNewThread(ExecuteCommands(updates));
+            return _countRunningCommands >= _maxRunningCommands ||
+                   telegramCommands.Any(
+                       c =>
+                           !c.AllowParlallelExecution &&
+                           update.Message.Text.Trim().StartsWith($"/{c.Name.Trim().ToLower()}"));
         }
 
-        private void SayOccupied(ParallelQuery<Update> updates)
+        private void SayOccupied(Update update)
         {
-            updates.ForAll(update =>
-            {
-                var message = $"No momento estou ocupado para executar o comando \"{update.Message.Text}\". Assim que desocupar aviso.";
-                _unprocessedUpdates.Add(update);
-                TelegramCommand.SendMessageToChat(_telegramBot, update.Message.Chat.Id, message);
-            });
+            var message = $"No momento estou ocupado para executar o comando \"{update.Message.Text}\". Assim que desocupar aviso.";
+            _unprocessedUpdates.Add(update);
+            TelegramCommand.SendMessageToChat(_telegramBot, update.Message.Chat.Id, message);
         }
 
-        private Action ExecuteCommands(ParallelQuery<Update> updates)
+        private Action ExecuteCommands(Update update)
         {
             return () =>
             {
-                updates.ForAll(update =>
+                var messageText = update.Message.Text.ToLower().Trim();
+                var commands = GetCommands().Where(c => messageText.StartsWith($"/{c.Name.Trim().ToLower()}"));
+
+                commands.AsParallel().ForAll(command =>
                 {
-                    var telegramCommands = GetCommands();
-
-                    foreach (var userCommand in telegramCommands.Keys)
+                    var executionId = $"{command.Name}_{DateTime.Now.ToString("yyyyMMddHHmmssffff")}_{new Random().Next(1, 1000000)}";
+                    try
                     {
-                        if (update.Message.Text.ToLower().Trim().StartsWith(userCommand.Trim().ToLower()))
-                        {
-                            var command = telegramCommands[userCommand];
-                            try
-                            {
-                                SayCommandReceived(command, update, update.Message.Text);
-                                command.Execute(update.Message);
-                            }
-                            catch (Exception e)
-                            {
-                                var msgError = $"Ocorreu um erro ao executar o comando: {e.Message}\r\n{e.StackTrace}";
-                                Console.WriteLine(msgError);
+                        RunningCommands.Add(executionId);
+                        SayCommandReceived(command, update, update.Message.Text);
+                        command.Execute(update.Message);
+                    }
+                    catch (Exception e)
+                    {
+                        var msgError = $"Ocorreu um erro ao executar o comando: {e.Message}\r\n{e.StackTrace}";
+                        Console.WriteLine(msgError);
 
-                                command.SendToChat(update.Message.Chat.Id, "Ocorreu um erro ao executar o comando!");
-                            }
-                        }
+                        command.SendToChat(update.Message.Chat.Id, "Ocorreu um erro ao executar o comando!");
+                    }
+                    finally
+                    {
+                        RunningCommands.Remove(executionId);
                     }
                 });
             };
@@ -116,7 +133,7 @@ namespace CoreSprint.Integration
         {
             var thread = new Thread(() =>
             {
-                RunningCommands++;
+                _countRunningCommands++;
                 try
                 {
                     action();
@@ -127,7 +144,7 @@ namespace CoreSprint.Integration
                 }
                 finally
                 {
-                    RunningCommands--;
+                    _countRunningCommands--;
                     SayIAmFree();
                 }
             });
@@ -136,7 +153,7 @@ namespace CoreSprint.Integration
 
         private void SayIAmFree()
         {
-            if (RunningCommands < _maxRunningCommands && _unprocessedUpdates != null && _unprocessedUpdates.Any())
+            if (_countRunningCommands < _maxRunningCommands && _unprocessedUpdates != null && _unprocessedUpdates.Any())
             {
                 var chats = _unprocessedUpdates.Select(u => u.Message.Chat.Id).Distinct().AsParallel();
                 chats.ForAll(chatId =>
@@ -174,6 +191,7 @@ namespace CoreSprint.Integration
         {
             File.WriteAllText(CoreSprintApp.TelegramDataPath, updateId.ToString());
         }
+
         private static long GetLastUpdateId()
         {
             var updateId = 1L;

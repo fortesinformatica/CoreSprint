@@ -15,6 +15,10 @@ namespace CoreSprint.Telegram.TelegramCommands
             TelegramBot = telegramBot;
         }
 
+        public abstract string Name { get; }
+
+        public virtual bool AllowParlallelExecution { get; } = true;
+
         public abstract void Execute(Message message);
 
         public void SendToChat(long chatId, string message)

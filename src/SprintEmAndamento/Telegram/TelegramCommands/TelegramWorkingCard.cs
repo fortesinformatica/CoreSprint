@@ -34,10 +34,12 @@ namespace CoreSprint.Telegram.TelegramCommands
             _telegramHelper = coreSprintFactory.GetTelegramHelper();
         }
 
+        public override string Name { get; } = "card_working";
+
         public override void Execute(Message message)
         {
             var chatId = message.Chat.Id;
-            var professionals = _telegramHelper.GetQueryResponsible(message.Text, "card_working");
+            var professionals = _telegramHelper.GetQueryResponsible(message.Text, Name);
             var sprintWorksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetWorksheet(_spreadsheetId, "SprintCorrente"));
             var sprintPeriod = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetSprintPeriod(sprintWorksheet));
             var cards = ExecutionHelper.ExecuteAndRetryOnFail(() => _trelloFacade.GetCards(_trelloBoardId));
@@ -47,7 +49,7 @@ namespace CoreSprint.Telegram.TelegramCommands
             var enumerable = professionals as string[] ?? professionals.ToArray();
 
             if (!enumerable.Any())
-                SendToChat(chatId, "Informe o nome de pelo menos um profissional.\r\nExemplo: /card_working_nomedoprofissional\r\nResposta ao comando /card_working");
+                SendToChat(chatId, $"Informe o nome de pelo menos um profissional.\r\nExemplo: /{Name}_nomedoprofissional\r\nResposta ao comando /{Name}");
 
             enumerable.AsParallel().ForAll(professional =>
             {

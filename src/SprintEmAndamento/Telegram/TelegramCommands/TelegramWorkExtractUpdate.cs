@@ -17,6 +17,10 @@ namespace CoreSprint.Telegram.TelegramCommands
             _workExtract = new WorkExtract(coreSprintFactory, trelloBoardId, spreadsheetId);
         }
 
+        public override string Name { get; } = "update_work_extract";
+
+        public override bool AllowParlallelExecution => false;
+
         public override void Execute(Message message)
         {
             SendToChat(message.Chat.Id, "Vou processar o quadro do trello e atualizar a planilha. Assim que terminar aviso.");

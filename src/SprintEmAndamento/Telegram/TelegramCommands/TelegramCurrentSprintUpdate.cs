@@ -17,6 +17,10 @@ namespace CoreSprint.Telegram.TelegramCommands
             _currentSprintUpdate = new CurrentSprintUpdate(coreSprintFactory, trelloBoardId, spreadsheetId); //TODO: criar método no factory
         }
 
+        public override string Name { get; } = "update_report";
+
+        public override bool AllowParlallelExecution => false;
+
         public override void Execute(Message message)
         {
             SendToChat(message.Chat.Id, "Vou processar o quadro do trello e atualizar a planilha. Assim que terminar aviso.");

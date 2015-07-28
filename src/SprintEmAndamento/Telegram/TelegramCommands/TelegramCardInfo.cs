@@ -34,10 +34,12 @@ namespace CoreSprint.Telegram.TelegramCommands
             _telegramHelper = coreSprintFactory.GetTelegramHelper();
         }
 
+        public override string Name { get; } = "card_info";
+
         public override void Execute(Message message)
         {
             var queryCards = GetQueryCards(message.Text).ToList();
-            var queryResponsible = _telegramHelper.GetQueryResponsible(message.Text, "card_info").ToList();
+            var queryResponsible = _telegramHelper.GetQueryResponsible(message.Text, Name).ToList();
             var chatId = message.Chat.Id;
 
             if (queryCards.Any() || queryResponsible.Any())

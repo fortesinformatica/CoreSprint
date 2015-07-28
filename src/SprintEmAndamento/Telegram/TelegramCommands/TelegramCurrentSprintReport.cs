@@ -27,6 +27,8 @@ namespace CoreSprint.Telegram.TelegramCommands
             _telegramHelper = factory.GetTelegramHelper();
         }
 
+        public override string Name { get; } = "report";
+
         public override void Execute(Message message)
         {
             Console.WriteLine("Consultando relatório do sprint corrente...");
@@ -35,7 +37,7 @@ namespace CoreSprint.Telegram.TelegramCommands
 
             var spreadsheet = _spreadsheetFacade.GetSpreadsheet(_spreadsheetId);
             var worksheet = _spreadsheetFacade.GetWorksheet(spreadsheet, worksheetName);
-            var professionals = _telegramHelper.GetQueryResponsible(message.Text, "report");
+            var professionals = _telegramHelper.GetQueryResponsible(message.Text, Name);
 
             //TODO: deduzir linhas e colunas max e min ao invés de utilizar valores fixos
             var sprintRunningSection = _sprintRunningHelper.GetSectionLinesPosition(worksheet, "Relatório de andamento do sprint");
