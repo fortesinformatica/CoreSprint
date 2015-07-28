@@ -67,7 +67,7 @@ namespace CoreSprint.Integration
 
             Console.WriteLine("\t> Atualizando tempo operacional pendente...");
             columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Trabalho alocado pendente"));
-            SaveCurrentSprintData(resultOfAnalysis["remainderByResponsible"], sprintRunningPos, columnPosition); //TODO: utilizar constante
+            SaveCurrentSprintData(resultOfAnalysis["pendingByResponsible"], sprintRunningPos, columnPosition); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando tempo total trabalhado no sprint...");
             columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Total trabalhado"));
@@ -106,7 +106,7 @@ namespace CoreSprint.Integration
             var boardMembers = _trelloFacade.GetMembers(board).ToList();
 
             var allocationsByResponsible = new Dictionary<string, double>();
-            var remainderByResponsible = new Dictionary<string, double>();
+            var pendingByResponsible = new Dictionary<string, double>();
             var workedOnAllocations = new Dictionary<string, double>();
             var totalWorked = new Dictionary<string, double>();
             var allocationByLabels = new Dictionary<string, double>();
@@ -121,32 +121,32 @@ namespace CoreSprint.Integration
                 var comments = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetCardComments(card1)).ToList();
                 var labels = _cardHelper.GetCardLabels(card);
 
-                var beforeRunning = _cardHelper.GetWorkedAndRemainder(estimate, comments, startDate);
-                var running = _cardHelper.GetWorkedAndRemainder(estimate, comments, endDate);
+                var beforeRunning = _cardHelper.GetWorkedAndPending(estimate, comments, startDate);
+                var running = _cardHelper.GetWorkedAndPending(estimate, comments, endDate);
 
                 foreach (var responsible in responsibles.Split(';').AsParallel())
                 {
-                    var runningByResponsible = _cardHelper.GetWorkedAndRemainder(estimate, comments, responsible, startDate, endDate);
+                    var runningByResponsible = _cardHelper.GetWorkedAndPending(estimate, comments, responsible, startDate, endDate);
 
-                    Calculate(allocationsByResponsible, responsible, beforeRunning["remainder"]);
-                    Calculate(remainderByResponsible, responsible, running["remainder"]);
+                    Calculate(allocationsByResponsible, responsible, beforeRunning["pending"]);
+                    Calculate(pendingByResponsible, responsible, running["pending"]);
                     Calculate(workedOnAllocations, responsible, runningByResponsible["worked"]);
                 }
 
                 foreach (var boardMember in boardMembers.AsParallel())
                 {
-                    var onAllocations = _cardHelper.GetWorkedAndRemainder(estimate, comments, boardMember.FullName, startDate, endDate);
+                    var onAllocations = _cardHelper.GetWorkedAndPending(estimate, comments, boardMember.FullName, startDate, endDate);
                     Calculate(totalWorked, boardMember.FullName, onAllocations["worked"]);
                 }
 
                 foreach (var label in labels.Split(';').AsParallel())
                 {
-                    Calculate(allocationByLabels, label, beforeRunning["remainder"]);
+                    Calculate(allocationByLabels, label, beforeRunning["pending"]);
                 }
             }
 
             result.Add("allocationsByResponsible", allocationsByResponsible);
-            result.Add("remainderByResponsible", remainderByResponsible);
+            result.Add("pendingByResponsible", pendingByResponsible);
             result.Add("workedOnAllocations", workedOnAllocations);
             result.Add("totalWorked", totalWorked);
             result.Add("allocationByLabels", allocationByLabels);

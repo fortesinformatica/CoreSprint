@@ -53,7 +53,8 @@ namespace CoreSprint.Integration
 
             cards.AsParallel().ForAll(card =>
             {
-                Console.WriteLine("Inserindo cartão ({0}/{1}): {2}", ++i, count, card.Name);
+                i++;
+                Console.WriteLine("Inserindo cartão ({0}/{1}): {2}", i, count, card.Name);
 
                 var row = MountWorksheetRow(card, sprintPeriod);
 
@@ -93,12 +94,12 @@ namespace CoreSprint.Integration
             var status = _cardHelper.GetStatus(card);
             var responsible = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetResponsible(card));
             var comments = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetCardComments(card));
-            var workedAndRemainder = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetWorkedAndRemainder(estimate, comments, sprintPeriod["endDate"]));
-            var workedAndRemainderInSprint = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetWorkedAndRemainder(estimate, comments, sprintPeriod["startDate"], sprintPeriod["endDate"])); 
-            var worked = workedAndRemainder["worked"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
-            var workedInSprint = workedAndRemainderInSprint["worked"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
-            var remainder = workedAndRemainder["remainder"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
-            var reassessment = (workedAndRemainder["worked"] + workedAndRemainder["remainder"]).ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var workedAndPending = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetWorkedAndPending(estimate, comments, sprintPeriod["endDate"]));
+            var workedAndPendingInSprint = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetWorkedAndPending(estimate, comments, sprintPeriod["startDate"], sprintPeriod["endDate"])); 
+            var worked = workedAndPending["worked"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var workedInSprint = workedAndPendingInSprint["worked"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var pending = workedAndPending["pending"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var reassessment = (workedAndPending["worked"] + workedAndPending["pending"]).ToString(CultureInfo.InvariantCulture).Replace(".", ",");
 
             row.Elements.Add(new ListEntry.Custom { LocalName = "status", Value = status });
             row.Elements.Add(new ListEntry.Custom { LocalName = "titulo", Value = title });
@@ -108,7 +109,7 @@ namespace CoreSprint.Integration
             row.Elements.Add(new ListEntry.Custom { LocalName = "estimativa", Value = estimate });
             row.Elements.Add(new ListEntry.Custom { LocalName = "trabalhado", Value = worked });
             row.Elements.Add(new ListEntry.Custom { LocalName = "trabalhadonosprint", Value = workedInSprint });
-            row.Elements.Add(new ListEntry.Custom { LocalName = "restante", Value = remainder });
+            row.Elements.Add(new ListEntry.Custom { LocalName = "restante", Value = pending });
             row.Elements.Add(new ListEntry.Custom { LocalName = "reestimativa", Value = reassessment });
             row.Elements.Add(new ListEntry.Custom { LocalName = "rotulos", Value = labels });
             row.Elements.Add(new ListEntry.Custom { LocalName = "link", Value = card.ShortUrl });

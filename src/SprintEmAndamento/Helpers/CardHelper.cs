@@ -20,7 +20,7 @@ namespace CoreSprint.Helpers
         private readonly string _delimiter;
         private readonly string _strPriorityPattern;
         private readonly string _strEstimatePattern;
-        private readonly Regex _remainderPattern;
+        private readonly Regex _pendingPattern;
         private readonly Regex _workedPattern;
         private readonly Regex _numberPattern;
         private readonly CultureInfo _cultureInfoEnUs;
@@ -38,7 +38,7 @@ namespace CoreSprint.Helpers
             _strEstimatePattern = $@"\{{(\s)*({_strNumberPattern})(\s)*hora[\sa-zA-Z]*\}}";
 
             _numberPattern = new Regex(_strNumberPattern, RegexOptions.IgnoreCase);
-            _remainderPattern =
+            _pendingPattern =
                 new Regex($@">(\s)*(restam|restante)(\s)+{_strNumberPattern}",
                     RegexOptions.IgnoreCase);
             _workedPattern = new Regex($@">(\s)*trabalhado(\s)+{_strNumberPattern}",
@@ -117,41 +117,41 @@ namespace CoreSprint.Helpers
             return match.Success ? match.Value : _nothingValue;
         }
 
-        public Dictionary<string, double> GetWorkedAndRemainder(Card card)
+        public Dictionary<string, double> GetWorkedAndPending(Card card)
         {
             var comments = GetCardComments(card);
-            return GetWorkedAndRemainder(GetCardEstimate(card), comments);
+            return GetWorkedAndPending(GetCardEstimate(card), comments);
         }
 
-        public Dictionary<string, double> GetWorkedAndRemainder(Card card, DateTime until)
+        public Dictionary<string, double> GetWorkedAndPending(Card card, DateTime until)
         {
             var comments = GetCardComments(card);
-            return GetWorkedAndRemainder(GetCardEstimate(card), comments, until);
+            return GetWorkedAndPending(GetCardEstimate(card), comments, until);
         }
 
-        public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments)
+        public Dictionary<string, double> GetWorkedAndPending(string cardEstimate, IEnumerable<CommentCardAction> comments)
         {
-            return GetWorkedAndRemainder(cardEstimate, comments, null);
+            return GetWorkedAndPending(cardEstimate, comments, null);
         }
 
-        public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime until)
+        public Dictionary<string, double> GetWorkedAndPending(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime until)
         {
-            return GetWorkedAndRemainder(cardEstimate, comments, c => _commentHelper.GetDateInComment(c) <= until);
+            return GetWorkedAndPending(cardEstimate, comments, c => _commentHelper.GetDateInComment(c) <= until);
         }
 
-        public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime startDate, DateTime endDate)
+        public Dictionary<string, double> GetWorkedAndPending(string cardEstimate, IEnumerable<CommentCardAction> comments, DateTime startDate, DateTime endDate)
         {
-            return GetWorkedAndRemainder(cardEstimate, comments, c =>
+            return GetWorkedAndPending(cardEstimate, comments, c =>
             {
                 var dateInComment = _commentHelper.GetDateInComment(c);
                 return dateInComment >= startDate && dateInComment <= endDate;
             });
         }
 
-        public Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, List<CommentCardAction> comments, string professional,
+        public Dictionary<string, double> GetWorkedAndPending(string cardEstimate, List<CommentCardAction> comments, string professional,
             DateTime startDate, DateTime endDate)
         {
-            return GetWorkedAndRemainder(cardEstimate, comments,
+            return GetWorkedAndPending(cardEstimate, comments,
                 c =>
                 {
                     var dateInComment = _commentHelper.GetDateInComment(c);
@@ -186,9 +186,9 @@ namespace CoreSprint.Helpers
 
                 if (matchWork && dateInComment >= startDate && dateInComment <= endDate)
                 {
-                    var remainder = 0D;
+                    var pending = 0D;
                     var worked = CalculateRunningWorked(comment, workedControl);
-                    worked += CalculateWorkedAndReminder(comment, _cultureInfoEnUs, ref remainder);
+                    worked += CalculateWorkedAndReminder(comment, _cultureInfoEnUs, ref pending);
 
                     extract.Add(new CardWorkDto
                     {
@@ -230,10 +230,10 @@ namespace CoreSprint.Helpers
             return allWork;
         }
 
-        private Dictionary<string, double> GetWorkedAndRemainder(string cardEstimate, IEnumerable<CommentCardAction> comments, Func<CommentCardAction, bool> validateComment)
+        private Dictionary<string, double> GetWorkedAndPending(string cardEstimate, IEnumerable<CommentCardAction> comments, Func<CommentCardAction, bool> validateComment)
         {
-            var strRemainder = _numberPattern.Match(cardEstimate.Replace(",", ".")).Value;
-            var remainder = double.Parse(string.IsNullOrWhiteSpace(strRemainder) ? "0" : strRemainder, _cultureInfoEnUs);
+            var strPending = _numberPattern.Match(cardEstimate.Replace(",", ".")).Value;
+            var pending = double.Parse(string.IsNullOrWhiteSpace(strPending) ? "0" : strPending, _cultureInfoEnUs);
             var worked = 0D;
             var workedControl = new Dictionary<string, DateTime>();
 
@@ -242,31 +242,31 @@ namespace CoreSprint.Helpers
             foreach (var comment in comments.Where(comment => validateComment == null || validateComment(comment)))
             {
                 worked += CalculateRunningWorked(comment, workedControl);
-                worked += CalculateWorkedAndReminder(comment, _cultureInfoEnUs, ref remainder);
+                worked += CalculateWorkedAndReminder(comment, _cultureInfoEnUs, ref pending);
             }
 
-            remainder = remainder > 0 ? remainder : 0;
+            pending = pending > 0 ? pending : 0;
 
-            return new Dictionary<string, double> { { "worked", worked }, { "remainder", remainder } };
+            return new Dictionary<string, double> { { "worked", worked }, { "pending", pending } };
         }
 
-        private double CalculateWorkedAndReminder(CommentCardAction comment, CultureInfo cultureInfo, ref double remainder)
+        private double CalculateWorkedAndReminder(CommentCardAction comment, CultureInfo cultureInfo, ref double pending)
         {
             var worked = 0D;
             var matchesWorked = _workedPattern.Matches(comment.Data.Text);
-            var matchesRemainder = _remainderPattern.Matches(comment.Data.Text);
+            var matchesPending = _pendingPattern.Matches(comment.Data.Text);
 
             foreach (Match match in matchesWorked)
             {
                 var matchNumber = _numberPattern.Match(match.Value);
                 var workedInComment = double.Parse(matchNumber.Value, cultureInfo);
                 worked += matchNumber.Success ? workedInComment : 0D;
-                remainder -= matchesRemainder.Count > 0 ? 0D : workedInComment;
+                pending -= matchesPending.Count > 0 ? 0D : workedInComment;
             }
 
-            foreach (var matchNumber in from Match match in matchesRemainder select _numberPattern.Match(match.Value))
+            foreach (var matchNumber in from Match match in matchesPending select _numberPattern.Match(match.Value))
             {
-                remainder = matchNumber.Success ? double.Parse(matchNumber.Value, cultureInfo) : 0D;
+                pending = matchNumber.Success ? double.Parse(matchNumber.Value, cultureInfo) : 0D;
             }
             return worked;
         }

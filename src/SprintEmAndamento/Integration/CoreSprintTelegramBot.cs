@@ -37,14 +37,21 @@ namespace CoreSprint.Integration
         public void Execute()
         {
             //NetTelegramBotApi.Requests
+            var telegramCommands = GetUpdateCommands();
+            ExecuteUpdateCommands(telegramCommands);
+        }
+
+        private void ExecuteUpdateCommands(IEnumerable<ITelegramCommand> telegramCommands)
+        {
             var updates = GetUpdates();
-            var telegramCommands = GetCommands();
 
             var enumerableUpdates = updates as Update[] ?? updates.ToArray();
             if (enumerableUpdates.Any()) //TODO: diminuir complexidade ciclomática
             {
                 SetLastUpdateId(enumerableUpdates.Max(u => u.UpdateId));
-                updates = enumerableUpdates.Where(u => telegramCommands.Any(c => u.Message.Text.Trim().StartsWith($"/{c.Name.Trim().ToLower()}")));
+                updates =
+                    enumerableUpdates.Where(
+                        u => telegramCommands.Any(c => u.Message.Text.Trim().StartsWith($"/{c.Name.Trim().ToLower()}")));
                 enumerableUpdates = updates as Update[] ?? updates.ToArray();
 
                 if (enumerableUpdates.Any())
@@ -77,7 +84,7 @@ namespace CoreSprint.Integration
             SayCommandReceived(update);
         }
 
-        private IEnumerable<ITelegramCommand> GetCommands()
+        private IEnumerable<ITelegramCommand> GetUpdateCommands()
         {
             /*
              report - Relatório do sprint atual com horas trabalhadas e pendentes por profissional
@@ -133,7 +140,7 @@ namespace CoreSprint.Integration
                     var msgError = $"Ocorreu um erro ao executar o comando: {e.Message}\r\n{e.StackTrace}";
                     Console.WriteLine(msgError);
 
-                    command.SendToChat(update.Message.Chat.Id, "Ocorreu um erro ao executar o comando!");
+                    command.SendToChat(update.Message.Chat.Id, $"Ocorreu um erro ao executar o comando \"/{command.Name}\"!");
                 }
                 finally
                 {

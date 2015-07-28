@@ -125,20 +125,20 @@ namespace CoreSprint.Telegram.TelegramCommands
             var cardName = _cardHelper.GetCardTitle(card);
             var estimate = _cardHelper.GetCardEstimate(card);
             var comments = ExecutionHelper.ExecuteAndRetryOnFail(() => _cardHelper.GetCardComments(card)).ToList();
-            var workedAndRemainderBeforeSprint = _cardHelper.GetWorkedAndRemainder(estimate, comments, startDate);
-            var workedAndRemainder = _cardHelper.GetWorkedAndRemainder(estimate, comments, endDate);
-            var workedAndRemainderInSprint = _cardHelper.GetWorkedAndRemainder(estimate, comments, startDate, endDate);
-            var workedInSprint = workedAndRemainderInSprint["worked"].ToString(CultureInfo.InvariantCulture);
-            var worked = workedAndRemainder["worked"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
-            var remainder = workedAndRemainder["remainder"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
-            var remainderBeforeSprint = workedAndRemainderBeforeSprint["remainder"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var workedAndPendingBeforeSprint = _cardHelper.GetWorkedAndPending(estimate, comments, startDate);
+            var workedAndPending = _cardHelper.GetWorkedAndPending(estimate, comments, endDate);
+            var workedAndPendingInSprint = _cardHelper.GetWorkedAndPending(estimate, comments, startDate, endDate);
+            var workedInSprint = workedAndPendingInSprint["worked"].ToString(CultureInfo.InvariantCulture);
+            var worked = workedAndPending["worked"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var pending = workedAndPending["pending"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
+            var pendingBeforeSprint = workedAndPendingBeforeSprint["pending"].ToString(CultureInfo.InvariantCulture).Replace(".", ",");
             var status = _cardHelper.GetStatus(card);
             var responsibles = _cardHelper.GetResponsible(card);
 
             //TODO: ajustar ordem
             var message = string.Format(
                 "Cartão: {0} ({1})\r\n-------------------\r\nResponsável: {6}\r\nStatus: {5}\r\nEstimado: {2}\r\nTrabalhado: {3}\r\nTrabalhado no Sprint: {7}\r\nPendente no início do Sprint: {8}\r\nPendente: {4}",
-                cardName, card.Url, estimate, worked, remainder, status, responsibles, workedInSprint, remainderBeforeSprint);
+                cardName, card.Url, estimate, worked, pending, status, responsibles, workedInSprint, pendingBeforeSprint);
 
             return message;
         }
