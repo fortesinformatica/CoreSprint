@@ -62,24 +62,24 @@ namespace CoreSprint.Integration
             Console.WriteLine("Atualizando relatório de planejamento de sprint...");
 
             Console.WriteLine("\t> Atualizando alocações...");
-            SaveCurrentSprintData(resultOfAnalysis["allocationsByResponsible"], sprintPlanningPos,
-                _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintPlanningPos, "Tempo alocado")); //TODO: utilizar constante
+            var columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintPlanningPos, "Tempo alocado"));
+            SaveCurrentSprintData(resultOfAnalysis["allocationsByResponsible"], sprintPlanningPos, columnPosition); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando tempo operacional pendente...");
-            SaveCurrentSprintData(resultOfAnalysis["remainderByResponsible"], sprintRunningPos,
-                _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Trabalho alocado pendente")); //TODO: utilizar constante
+            columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Trabalho alocado pendente"));
+            SaveCurrentSprintData(resultOfAnalysis["remainderByResponsible"], sprintRunningPos, columnPosition); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando tempo total trabalhado no sprint...");
-            SaveCurrentSprintData(resultOfAnalysis["totalWorked"], sprintRunningPos,
-                _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Total trabalhado")); //TODO: utilizar constante
+            columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Total trabalhado"));
+            SaveCurrentSprintData(resultOfAnalysis["totalWorked"], sprintRunningPos, columnPosition); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando tempo trabalhado no sprint para alocações...");
-            SaveCurrentSprintData(resultOfAnalysis["workedOnAllocations"], sprintRunningPos,
-                _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Trabalhado em cartões alocados")); //TODO: utilizar constante
+            columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Trabalhado em cartões alocados"));
+            SaveCurrentSprintData(resultOfAnalysis["workedOnAllocations"], sprintRunningPos, columnPosition); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando alocações por rótulo...");
-            SaveCurrentSprintData(resultOfAnalysis["allocationByLabels"], sprintAllocationByLabelsPos,
-                _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintAllocationByLabelsPos, "Tempo alocado")); //TODO: utilizar constante
+            columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintAllocationByLabelsPos, "Tempo alocado"));
+            SaveCurrentSprintData(resultOfAnalysis["allocationByLabels"], sprintAllocationByLabelsPos, columnPosition); //TODO: utilizar constante
         }
 
         private void SaveCurrentSprintData(Dictionary<string, double> resultOfAnalysis, Dictionary<string, uint> sectionPositions, uint columnPosition)

@@ -19,7 +19,7 @@ namespace CoreSprint.Integration
         private static List<Update> _unprocessedUpdates;
         private static int _maxRunningCommands = 10;
         private static int _countRunningCommands;
-        private static readonly IList<string> RunningCommands = new List<string>();
+        private static readonly List<string> RunningCommands = new List<string>();
 
         public CoreSprintTelegramBot(CoreSprintFactory sprintFactory)
         {
@@ -37,28 +37,44 @@ namespace CoreSprint.Integration
         public void Execute()
         {
             //NetTelegramBotApi.Requests
-            var updates = GetUpdates().AsParallel().AsOrdered();
+            var updates = GetUpdates();
             var telegramCommands = GetCommands();
 
-            if (updates.Any())
+            var enumerableUpdates = updates as Update[] ?? updates.ToArray();
+            if (enumerableUpdates.Any()) //TODO: diminuir complexidade ciclomática
             {
-                SetLastUpdateId(updates.Max(u => u.UpdateId));
+                SetLastUpdateId(enumerableUpdates.Max(u => u.UpdateId));
+                updates = enumerableUpdates.Where(u => telegramCommands.Any(c => u.Message.Text.Trim().StartsWith($"/{c.Name.Trim().ToLower()}")));
+                enumerableUpdates = updates as Update[] ?? updates.ToArray();
 
-                updates =
-                    updates.Where(
-                        u => telegramCommands.Any(c => u.Message.Text.Trim().StartsWith($"/{c.Name.Trim().ToLower()}")));
-
-                if (updates.Any())
+                if (enumerableUpdates.Any())
                 {
-                    foreach (var update in updates)
+                    var enumerableTelegramCommands = telegramCommands as ITelegramCommand[] ?? telegramCommands.ToArray();
+
+                    foreach (var update in enumerableUpdates)
                     {
-                        if (CheckIfOccupied(telegramCommands, update))
-                            SayOccupied(update);
+                        var isOccupied = CheckIfOccupied(enumerableTelegramCommands, update);
+
+                        if (!isOccupied)
+                        {
+                            MarkAsRunning(update);
+                            ExecuteInNewThread(() => ExecuteCommands(enumerableTelegramCommands, update));
+                        }
                         else
-                            ExecuteInNewThread(ExecuteCommands(update));
+                        {
+                            SayOccupied(update);
+                        }
                     }
                 }
             }
+        }
+
+        private void MarkAsRunning(Update update)
+        {
+            var messageText = update.Message.Text.Trim().ToLower();
+            var messageTimeId = update.Message.Date.ToString("yyyyMMddHHmmssffff");
+            RunningCommands.Add($"{messageText}_{messageTimeId}");
+            SayCommandReceived(update);
         }
 
         private IEnumerable<ITelegramCommand> GetCommands()
@@ -87,8 +103,11 @@ namespace CoreSprint.Integration
             return _countRunningCommands >= _maxRunningCommands ||
                    telegramCommands.Any(
                        c =>
-                           !c.AllowParlallelExecution &&
-                           update.Message.Text.Trim().StartsWith($"/{c.Name.Trim().ToLower()}"));
+                       {
+                           var commandName = c.Name.Trim().ToLower();
+                           var updateMessage = update.Message.Text.Trim();
+                           return !c.AllowParlallelExecution && updateMessage.StartsWith($"/{commandName}") && RunningCommands.Any(r => r.Contains(commandName));
+                       });
         }
 
         private void SayOccupied(Update update)
@@ -98,35 +117,36 @@ namespace CoreSprint.Integration
             TelegramCommand.SendMessageToChat(_telegramBot, update.Message.Chat.Id, message);
         }
 
-        private Action ExecuteCommands(Update update)
+        private void ExecuteCommands(IEnumerable<ITelegramCommand> telegramCommands, Update update)
         {
-            return () =>
+            var commands = GetCommandsFromUpdate(telegramCommands, update);
+
+            commands.AsParallel().ForAll(command =>
             {
-                var messageText = update.Message.Text.ToLower().Trim();
-                var commands = GetCommands().Where(c => messageText.StartsWith($"/{c.Name.Trim().ToLower()}"));
 
-                commands.AsParallel().ForAll(command =>
+                try
                 {
-                    var executionId = $"{command.Name}_{DateTime.Now.ToString("yyyyMMddHHmmssffff")}_{new Random().Next(1, 1000000)}";
-                    try
-                    {
-                        RunningCommands.Add(executionId);
-                        SayCommandReceived(command, update, update.Message.Text);
-                        command.Execute(update.Message);
-                    }
-                    catch (Exception e)
-                    {
-                        var msgError = $"Ocorreu um erro ao executar o comando: {e.Message}\r\n{e.StackTrace}";
-                        Console.WriteLine(msgError);
+                    command.Execute(update.Message);
+                }
+                catch (Exception e)
+                {
+                    var msgError = $"Ocorreu um erro ao executar o comando: {e.Message}\r\n{e.StackTrace}";
+                    Console.WriteLine(msgError);
 
-                        command.SendToChat(update.Message.Chat.Id, "Ocorreu um erro ao executar o comando!");
-                    }
-                    finally
-                    {
-                        RunningCommands.Remove(executionId);
-                    }
-                });
-            };
+                    command.SendToChat(update.Message.Chat.Id, "Ocorreu um erro ao executar o comando!");
+                }
+                finally
+                {
+                    RunningCommands.RemoveAll(c => c.Trim().ToLower().StartsWith($"/{command.Name}"));
+                }
+            });
+        }
+
+        private static IEnumerable<ITelegramCommand> GetCommandsFromUpdate(IEnumerable<ITelegramCommand> telegramCommands, Update update)
+        {
+            var messageText = update.Message.Text.ToLower().Trim();
+            var commands = telegramCommands.Where(c => messageText.StartsWith($"/{c.Name.Trim().ToLower()}"));
+            return commands;
         }
 
         private void ExecuteInNewThread(Action action)
@@ -155,12 +175,17 @@ namespace CoreSprint.Integration
         {
             if (_countRunningCommands < _maxRunningCommands && _unprocessedUpdates != null && _unprocessedUpdates.Any())
             {
-                var chats = _unprocessedUpdates.Select(u => u.Message.Chat.Id).Distinct().AsParallel();
+                var chats = _unprocessedUpdates
+                        .Where(u => !RunningCommands.Any(c => u.Message.Text.Trim().ToLower().StartsWith($"/{c.Trim().ToLower()}")))
+                            .Select(u => u.Message.Chat.Id)
+                            .Distinct()
+                            .AsParallel();
+
                 chats.ForAll(chatId =>
                 {
                     var commandsQueried =
                         _unprocessedUpdates.Where(un => un.Message.Chat.Id == chatId)
-                            .Select(un => un.Message.From.FirstName + ": " + un.Message.Text)
+                            .Select(un => un.Message.From.FirstName + ": " + un.Message.Text).Distinct()
                             .Aggregate((text, next) => text + "\r\n" + next);
                     var msgSayFree =
                         string.Format("Já estou disponível para executar pelo menos um dos comandos solicitados:\r\n{0}",
@@ -172,11 +197,12 @@ namespace CoreSprint.Integration
             }
         }
 
-        private static void SayCommandReceived(ITelegramCommand command, Update update, string userCommand)
+        private void SayCommandReceived(Update update)
         {
-            command.SendToChat(update.Message.Chat.Id,
+            var message =
                 string.Format("{0}, recebi seu comando \"{1}\".\r\nPor favor, aguarde um momento enquanto processo...",
-                    update.Message.From.FirstName, userCommand));
+                    update.Message.From.FirstName, update.Message.Text);
+            TelegramCommand.SendMessageToChat(_telegramBot, update.Message.Chat.Id, message);
         }
 
         private IEnumerable<Update> GetUpdates()
