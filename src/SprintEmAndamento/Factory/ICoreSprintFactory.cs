@@ -16,6 +16,6 @@ namespace CoreSprint.Factory
         IWorksheetHelper GetWorksheetHelper();
         ISprintRunningHelper GetSprintRunningHelper();
         ITelegramHelper GetTelegramHelper();
-        ICommand GetCurrentSprintUpdate(string trelloBoardId, string spreadsheetId);
+        ICommand GetRunningSprintUpdater(string trelloBoardId, string spreadsheetId);
     }
 }

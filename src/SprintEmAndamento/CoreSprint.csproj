@@ -97,10 +97,10 @@
     <Compile Include="Telegram\TelegramCommands\TelegramLate.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramCardInfo.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramCommand.cs" />
-    <Compile Include="Telegram\TelegramCommands\TelegramCurrentSprintReport.cs" />
+    <Compile Include="Telegram\TelegramCommands\TelegramRunningSprintReport.cs" />
     <Compile Include="Integration\CoreSprintTelegramBot.cs" />
     <Compile Include="Telegram\TelegramCommands\ITelegramCommand.cs" />
-    <Compile Include="Telegram\TelegramCommands\TelegramCurrentSprintUpdate.cs" />
+    <Compile Include="Telegram\TelegramCommands\TelegramRunningSprintUpdater.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramListSprintCards.cs" />
     <Compile Include="Integration\WorkExtract.cs" />
     <Compile Include="Models\CardWorkDto.cs" />
@@ -118,7 +118,7 @@
     <Compile Include="Helpers\IWorksheetHelper.cs" />
     <Compile Include="Helpers\WorksheetHelper.cs" />
     <Compile Include="Factory\ICoreSprintFactory.cs" />
-    <Compile Include="Integration\CurrentSprintUpdate.cs" />
+    <Compile Include="Integration\RunningSprintUpdater.cs" />
     <Compile Include="Integration\ICommand.cs" />
     <Compile Include="Integration\ListSprintCards.cs" />
     <Compile Include="Program.cs" />

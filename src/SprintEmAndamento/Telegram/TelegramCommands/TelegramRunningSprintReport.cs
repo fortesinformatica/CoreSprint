@@ -9,14 +9,14 @@ using NetTelegramBotApi.Types;
 
 namespace CoreSprint.Telegram.TelegramCommands
 {
-    public class TelegramCurrentSprintReport : TelegramCommand
+    public class TelegramRunningSprintReport : TelegramCommand
     {
         private readonly string _spreadsheetId;
         private readonly ISpreadsheetFacade _spreadsheetFacade;
         private readonly ISprintRunningHelper _sprintRunningHelper;
         private readonly ITelegramHelper _telegramHelper;
 
-        public TelegramCurrentSprintReport(TelegramBot telegramBot, ICoreSprintFactory factory, string spreadsheetId)
+        public TelegramRunningSprintReport(TelegramBot telegramBot, ICoreSprintFactory factory, string spreadsheetId)
             : base(telegramBot)
         {
             _spreadsheetId = spreadsheetId;

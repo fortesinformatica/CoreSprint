@@ -37,8 +37,8 @@ namespace CoreSprint
             var sprintFactory = new CoreSprintFactory();
             var commandList = new List<ICommand>();
 
-            if (args.ToList().Contains("CurrentSprintUpdate"))
-                commandList.Add(new CurrentSprintUpdate(sprintFactory, trelloBoardId, spreadsheetId));
+            if (args.ToList().Contains("RunningSprintUpdater"))
+                commandList.Add(new RunningSprintUpdater(sprintFactory, trelloBoardId, spreadsheetId));
 
             if (args.ToList().Contains("ListSprintCards"))
                 commandList.Add(new ListSprintCards(sprintFactory, trelloBoardId, spreadsheetId));

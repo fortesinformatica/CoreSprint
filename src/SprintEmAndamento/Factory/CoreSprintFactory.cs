@@ -63,9 +63,9 @@ namespace CoreSprint.Factory
             return new TelegramHelper();
         }
 
-        public ICommand GetCurrentSprintUpdate(string trelloBoardId, string spreadsheetId)
+        public ICommand GetRunningSprintUpdater(string trelloBoardId, string spreadsheetId)
         {
-            return new CurrentSprintUpdate(this, trelloBoardId, spreadsheetId);
+            return new RunningSprintUpdater(this, trelloBoardId, spreadsheetId);
         }
     }
 }

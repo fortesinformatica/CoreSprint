@@ -11,7 +11,7 @@ using TrelloNet;
 
 namespace CoreSprint.Integration
 {
-    public class CurrentSprintUpdate : ICommand
+    public class RunningSprintUpdater : ICommand
     {
         private readonly string _trelloBoardId;
         private readonly string _spreadsheetId;
@@ -21,7 +21,7 @@ namespace CoreSprint.Integration
         private WorksheetEntry _worksheet;
         private readonly ISprintRunningHelper _sprintRunningHelper;
 
-        public CurrentSprintUpdate(ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
+        public RunningSprintUpdater(ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
         {
             _trelloBoardId = trelloBoardId;
             _spreadsheetId = spreadsheetId;
@@ -63,26 +63,26 @@ namespace CoreSprint.Integration
 
             Console.WriteLine("\t> Atualizando alocações...");
             var columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintPlanningPos, "Tempo alocado"));
-            SaveCurrentSprintData(resultOfAnalysis["allocationsByResponsible"], sprintPlanningPos, columnPosition); //TODO: utilizar constante
+            SaveRunningSprintData(resultOfAnalysis["allocationsByResponsible"], sprintPlanningPos, columnPosition); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando tempo operacional pendente...");
             columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Trabalho alocado pendente"));
-            SaveCurrentSprintData(resultOfAnalysis["pendingByResponsible"], sprintRunningPos, columnPosition); //TODO: utilizar constante
+            SaveRunningSprintData(resultOfAnalysis["pendingByResponsible"], sprintRunningPos, columnPosition); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando tempo total trabalhado no sprint...");
             columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Total trabalhado"));
-            SaveCurrentSprintData(resultOfAnalysis["totalWorked"], sprintRunningPos, columnPosition); //TODO: utilizar constante
+            SaveRunningSprintData(resultOfAnalysis["totalWorked"], sprintRunningPos, columnPosition); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando tempo trabalhado no sprint para alocações...");
             columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintRunningPos, "Trabalhado em cartões alocados"));
-            SaveCurrentSprintData(resultOfAnalysis["workedOnAllocations"], sprintRunningPos, columnPosition); //TODO: utilizar constante
+            SaveRunningSprintData(resultOfAnalysis["workedOnAllocations"], sprintRunningPos, columnPosition); //TODO: utilizar constante
 
             Console.WriteLine("\t> Atualizando alocações por rótulo...");
             columnPosition = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetHeaderColumnPosition(_worksheet, sprintAllocationByLabelsPos, "Tempo alocado"));
-            SaveCurrentSprintData(resultOfAnalysis["allocationByLabels"], sprintAllocationByLabelsPos, columnPosition); //TODO: utilizar constante
+            SaveRunningSprintData(resultOfAnalysis["allocationByLabels"], sprintAllocationByLabelsPos, columnPosition); //TODO: utilizar constante
         }
 
-        private void SaveCurrentSprintData(Dictionary<string, double> resultOfAnalysis, Dictionary<string, uint> sectionPositions, uint columnPosition)
+        private void SaveRunningSprintData(Dictionary<string, double> resultOfAnalysis, Dictionary<string, uint> sectionPositions, uint columnPosition)
         {
             if (!resultOfAnalysis.Any(r => r.Key.Equals("--Indefinido--")))
                 resultOfAnalysis.Add("--Indefinido--", 0);

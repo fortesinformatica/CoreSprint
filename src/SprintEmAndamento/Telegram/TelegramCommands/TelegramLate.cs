@@ -13,14 +13,14 @@ namespace CoreSprint.Telegram.TelegramCommands
     public class TelegramLate : TelegramCommand, ITelegramProactiveCommand
     {
         private readonly string _spreadsheetId;
-        private readonly ICommand _currentSprintUpdate;
+        private readonly ICommand _runningSprintUpdater;
         private readonly ISprintRunningHelper _sprintRunningHelper;
         private readonly ISpreadsheetFacade _spreadsheetFacade;
 
         public TelegramLate(TelegramBot telegramBot, ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId) : base(telegramBot)
         {
             _spreadsheetId = spreadsheetId;
-            _currentSprintUpdate = coreSprintFactory.GetCurrentSprintUpdate(trelloBoardId, spreadsheetId);
+            _runningSprintUpdater = coreSprintFactory.GetRunningSprintUpdater(trelloBoardId, spreadsheetId);
             _sprintRunningHelper = coreSprintFactory.GetSprintRunningHelper();
             _spreadsheetFacade = coreSprintFactory.GetSpreadsheetFacade();
         }
@@ -34,21 +34,26 @@ namespace CoreSprint.Telegram.TelegramCommands
             if (messageText.ToLower().Contains("update_sprint"))
             {
                 SendToChat(message.Chat.Id, "Vou processar o quadro do trello e atualizar a planilha para verificar os atrasados...");
-                _currentSprintUpdate.Execute();
+                _runningSprintUpdater.Execute();
             }
 
-            var messages = Process();
-
-            SendToChat(message.Chat.Id, messages.Aggregate((current, next) => $"{current}\r\n{next}"));
+            messageText = MountMessageResponse(Process());
+            SendToChat(message.Chat.Id, messageText);
         }
 
         public void Execute(IEnumerable<long> chats)
         {
-            _currentSprintUpdate.Execute();
+            _runningSprintUpdater.Execute();
 
-            var messages = Process();
-            var messageText = messages.Aggregate((current, next) => $"{current}\r\n{next}");
+            var messageText = MountMessageResponse(Process());
             chats.AsParallel().ForAll(chatId => SendToChat(chatId, messageText));
+        }
+
+        private static string MountMessageResponse(IEnumerable<string> messages)
+        {
+            return messages != null && messages.Any()
+                ? messages.Aggregate((current, next) => $"{current}\r\n{next}")
+                : "Não existe pendência de trabalho superior a disponibilidade para nenhum profissional";
         }
 
         private IEnumerable<string> Process()
@@ -64,8 +69,7 @@ namespace CoreSprint.Telegram.TelegramCommands
                             let pending = double.Parse(report["Trabalho alocado pendente"])
                             let professional = report["title"]
                             where availability.Value < pending
-                            select
-                                $"* {professional} possui {availability.Value} hora(s) disponíveis até o fim do sprint, mas ainda existem {pending} hora(s) de trabalho pendente.")
+                            select $"* {professional} possui {availability.Value} hora(s) disponíveis até o fim do sprint, mas ainda existem {pending} hora(s) de trabalho pendente.")
                 .ToList();
             return messages;
         }

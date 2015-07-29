@@ -7,14 +7,14 @@ using NetTelegramBotApi.Types;
 
 namespace CoreSprint.Telegram.TelegramCommands
 {
-    public class TelegramCurrentSprintUpdate : TelegramCommand
+    public class TelegramRunningSprintUpdater : TelegramCommand
     {
-        private readonly ICommand _currentSprintUpdate;
+        private readonly ICommand _runningSprintUpdate;
 
-        public TelegramCurrentSprintUpdate(TelegramBot telegramBot, ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
+        public TelegramRunningSprintUpdater(TelegramBot telegramBot, ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
             : base(telegramBot)
         {
-            _currentSprintUpdate = coreSprintFactory.GetCurrentSprintUpdate(trelloBoardId, spreadsheetId);
+            _runningSprintUpdate = coreSprintFactory.GetRunningSprintUpdater(trelloBoardId, spreadsheetId);
         }
 
         public override string Name { get; } = "update_report";
@@ -24,7 +24,7 @@ namespace CoreSprint.Telegram.TelegramCommands
         public override void Execute(Message message)
         {
             SendToChat(message.Chat.Id, "Vou processar o quadro do trello e atualizar a planilha. Assim que terminar aviso.");
-            _currentSprintUpdate.Execute();
+            _runningSprintUpdate.Execute();
             SendToChat(message.Chat.Id, $"Atualização da planilha do sprint concluída em {DateTime.Now.ToHumanReadable()}.\r\nResposta à \"{message.Text}\"");
         }
     }
