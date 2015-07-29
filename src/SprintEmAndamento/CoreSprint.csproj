@@ -97,6 +97,7 @@
     <Compile Include="Telegram\TelegramCommands\TelegramLate.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramCardInfo.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramCommand.cs" />
+    <Compile Include="Telegram\TelegramCommands\TelegramReassessment.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramRunningSprintReport.cs" />
     <Compile Include="Integration\CoreSprintTelegramBot.cs" />
     <Compile Include="Telegram\TelegramCommands\ITelegramCommand.cs" />

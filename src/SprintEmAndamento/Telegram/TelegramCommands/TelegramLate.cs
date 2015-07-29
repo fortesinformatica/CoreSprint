@@ -41,7 +41,7 @@ namespace CoreSprint.Telegram.TelegramCommands
             SendToChat(message.Chat.Id, messageText);
         }
 
-        public void Execute(IEnumerable<long> chats)
+        public void Execute(IEnumerable<long> chats, string message = "")
         {
             _runningSprintUpdater.Execute();
 
@@ -53,7 +53,7 @@ namespace CoreSprint.Telegram.TelegramCommands
         {
             return messages != null && messages.Any()
                 ? messages.Aggregate((current, next) => $"{current}\r\n{next}")
-                : "Não existe pendência de trabalho superior a disponibilidade para nenhum profissional";
+                : "Não existe pendência de trabalho superior a disponibilidade para os profissionais.";
         }
 
         private IEnumerable<string> Process()

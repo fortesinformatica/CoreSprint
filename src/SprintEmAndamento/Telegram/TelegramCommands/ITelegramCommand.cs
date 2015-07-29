@@ -5,7 +5,7 @@ namespace CoreSprint.Telegram.TelegramCommands
 {
     public interface ITelegramProactiveCommand
     {
-        void Execute(IEnumerable<long> chats);
+        void Execute(IEnumerable<long> chats, string message = "");
     }
 
     public interface ITelegramCommand
