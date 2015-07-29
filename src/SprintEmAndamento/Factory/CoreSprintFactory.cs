@@ -1,4 +1,5 @@
 ﻿using CoreSprint.Helpers;
+using CoreSprint.Integration;
 using CoreSprint.Spreadsheet;
 using CoreSprint.Trello;
 
@@ -60,6 +61,11 @@ namespace CoreSprint.Factory
         public ITelegramHelper GetTelegramHelper()
         {
             return new TelegramHelper();
+        }
+
+        public ICommand GetCurrentSprintUpdate(string trelloBoardId, string spreadsheetId)
+        {
+            return new CurrentSprintUpdate(this, trelloBoardId, spreadsheetId);
         }
     }
 }

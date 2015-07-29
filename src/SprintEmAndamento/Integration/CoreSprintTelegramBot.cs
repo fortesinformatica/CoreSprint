@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -34,15 +35,66 @@ namespace CoreSprint.Integration
             _unprocessedUpdates = _unprocessedUpdates ?? new List<Update>();
         }
 
-        public void Execute()
+        private IEnumerable<ITelegramCommand> GetReactiveCommands()
         {
-            //NetTelegramBotApi.Requests
-            var telegramCommands = GetUpdateCommands();
-            ExecuteUpdateCommands(telegramCommands);
+            /*
+             report - Relatório do sprint atual com horas trabalhadas e pendentes por profissional
+             update_report - Atualiza planilha do sprint atual com as informações do quadro de Sprint do Trello
+             update_cards_report - Atualiza lista de cartões do Trello na planilha do sprint atual
+             update_work_extract - Atualiza a planilha de horas trabalhadas com o extrato do sprint
+             card_info - Recupera informações de estimativa e tempo trabalhado do cartão
+             card_working - Recupera qual cartão um ou mais profissionais estão trabalhando
+             late - Identifica possíveis atrasos no sprint considerando a data atual e a data final do sprint
+             receive_alerts - Registra um chat para receber notificações de alerta
+             */
+            return new List<ITelegramCommand>
+            {
+                new TelegramCurrentSprintReport(_telegramBot, _sprintFactory, CoreSprintApp.SpreadsheetId),
+                new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramListSprintCards(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramWorkExtractUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramCardInfo(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramWorkingCard(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramLate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramReceiveAlerts(_telegramBot)
+            };
         }
 
-        private void ExecuteUpdateCommands(IEnumerable<ITelegramCommand> telegramCommands)
+        public void Execute()
         {
+            ExecuteProactiveCommands();
+            ExecuteReactiveCommands();
+        }
+
+        private void ExecuteProactiveCommands()
+        {
+            ExecuteInNewThread(() =>
+            {
+                var strDateTime = File.Exists(CoreSprintApp.TelegramProactivePath) ? File.ReadAllText(CoreSprintApp.TelegramProactivePath) : "";
+                var inTime = string.IsNullOrWhiteSpace(strDateTime) || DateTime.Now > Convert.ToDateTime(strDateTime, new CultureInfo("pt-BR", false).DateTimeFormat).AddHours(4);
+
+                if (inTime && File.Exists(CoreSprintApp.TelegramChatsPath))
+                {
+                    File.WriteAllText(CoreSprintApp.TelegramProactivePath, DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
+
+                    var commands = GetProactiveCommands();
+                    var chats = File.ReadAllLines(CoreSprintApp.TelegramChatsPath).Select(long.Parse);
+                    commands.AsParallel().ForAll(command => command.Execute(chats));
+                }
+            });
+        }
+
+        private List<ITelegramProactiveCommand> GetProactiveCommands()
+        {
+            return new List<ITelegramProactiveCommand>
+            {
+                new TelegramLate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)
+            };
+        }
+
+        private void ExecuteReactiveCommands()
+        {
+            var telegramCommands = GetReactiveCommands();
             var updates = GetUpdates();
 
             var enumerableUpdates = updates as Update[] ?? updates.ToArray();
@@ -84,27 +136,6 @@ namespace CoreSprint.Integration
             SayCommandReceived(update);
         }
 
-        private IEnumerable<ITelegramCommand> GetUpdateCommands()
-        {
-            /*
-             report - Relatório do sprint atual com horas trabalhadas e pendentes por profissional
-             update_report - Atualiza planilha do sprint atual com as informações do quadro de Sprint do Trello
-             update_cards_report - Atualiza lista de cartões do Trello na planilha do sprint atual
-             update_work_extract - Atualiza a planilha de horas trabalhadas com o extrato do sprint
-             card_info - Recupera informações de estimativa e tempo trabalhado do cartão
-             card_working - Recupera qual cartão um ou mais profissionais estão trabalhando
-             */
-            return new List<ITelegramCommand>
-            {
-                new TelegramCurrentSprintReport(_telegramBot, _sprintFactory, CoreSprintApp.SpreadsheetId),
-                new TelegramCurrentSprintUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
-                new TelegramListSprintCards(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
-                new TelegramWorkExtractUpdate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
-                new TelegramCardInfo(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
-                new TelegramWorkingCard(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)
-            };
-        }
-
         private static bool CheckIfOccupied(IEnumerable<ITelegramCommand> telegramCommands, Update update)
         {
             return _countRunningCommands >= _maxRunningCommands ||
@@ -130,7 +161,6 @@ namespace CoreSprint.Integration
 
             commands.AsParallel().ForAll(command =>
             {
-
                 try
                 {
                     command.Execute(update.Message);
@@ -194,9 +224,7 @@ namespace CoreSprint.Integration
                         _unprocessedUpdates.Where(un => un.Message.Chat.Id == chatId)
                             .Select(un => un.Message.From.FirstName + ": " + un.Message.Text).Distinct()
                             .Aggregate((text, next) => text + "\r\n" + next);
-                    var msgSayFree =
-                        string.Format("Já estou disponível para executar pelo menos um dos comandos solicitados:\r\n{0}",
-                            commandsQueried);
+                    var msgSayFree = $"Já estou disponível para executar pelo menos um dos comandos solicitados:\r\n{commandsQueried}";
 
                     TelegramCommand.SendMessageToChat(_telegramBot, chatId, msgSayFree);
                     _unprocessedUpdates.RemoveAll(un => un.Message.Chat.Id == chatId);
@@ -206,9 +234,7 @@ namespace CoreSprint.Integration
 
         private void SayCommandReceived(Update update)
         {
-            var message =
-                string.Format("{0}, recebi seu comando \"{1}\".\r\nPor favor, aguarde um momento enquanto processo...",
-                    update.Message.From.FirstName, update.Message.Text);
+            var message = $"{update.Message.From.FirstName}, recebi seu comando \"{update.Message.Text}\".\r\nPor favor, aguarde um momento enquanto processo...";
             TelegramCommand.SendMessageToChat(_telegramBot, update.Message.Chat.Id, message);
         }
 

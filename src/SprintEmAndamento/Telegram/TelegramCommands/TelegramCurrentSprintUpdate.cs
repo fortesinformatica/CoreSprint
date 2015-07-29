@@ -9,12 +9,12 @@ namespace CoreSprint.Telegram.TelegramCommands
 {
     public class TelegramCurrentSprintUpdate : TelegramCommand
     {
-        private readonly CurrentSprintUpdate _currentSprintUpdate;
+        private readonly ICommand _currentSprintUpdate;
 
         public TelegramCurrentSprintUpdate(TelegramBot telegramBot, ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
             : base(telegramBot)
         {
-            _currentSprintUpdate = new CurrentSprintUpdate(coreSprintFactory, trelloBoardId, spreadsheetId); //TODO: criar método no factory
+            _currentSprintUpdate = coreSprintFactory.GetCurrentSprintUpdate(trelloBoardId, spreadsheetId);
         }
 
         public override string Name { get; } = "update_report";

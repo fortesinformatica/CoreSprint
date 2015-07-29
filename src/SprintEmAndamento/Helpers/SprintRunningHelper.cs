@@ -51,7 +51,7 @@ namespace CoreSprint.Helpers
 
         public Dictionary<string, DateTime> GetSprintPeriod(WorksheetEntry worksheet)
         {
-            var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;
+            var dateFormat = new CultureInfo("pt-BR", false).DateTimeFormat;//TODO: criar método de extensão para DateTime
             var strStartDate = _spreadsheetFacade.GetCellValue(worksheet, 2, 2);
             var strEndDate = _spreadsheetFacade.GetCellValue(worksheet, 3, 2);
 
@@ -87,8 +87,49 @@ namespace CoreSprint.Helpers
             return result;
         }
 
+        public IDictionary<string, string> GetReportFromSection(WorksheetEntry worksheet, string sectionName, string professional = null)
+        {
+            var i = 1;
+            var headers = new List<string>();
+            var addToReport = false;
+            var report = new Dictionary<string, string>();
+            var sprintRunningSection = GetSectionLinesPosition(worksheet, sectionName);
+            var sectionFirstLine = sprintRunningSection.Min(s => s.Value) - 1;
+            var sectionLastLine = sprintRunningSection.Max(s => s.Value) + 1;
+            var sectionHeader = _spreadsheetFacade.GetCellsValues(worksheet, sectionFirstLine, sectionFirstLine, 1, uint.MaxValue);
+            var sectionColumnLastHeader = sectionHeader.Max(s => s.Column);
+
+            var reportCells = _spreadsheetFacade.GetCellsValues(worksheet, sectionFirstLine, sectionLastLine, 1, sectionColumnLastHeader);
+
+            foreach (var reportCell in reportCells)
+            {
+                if (i < sectionColumnLastHeader)
+                {
+                    headers.Add(reportCell.Value);
+                }
+                else
+                {
+                    if (i % sectionColumnLastHeader == 0) //nova linha
+                    {
+                        var lowerValue = reportCell.Value.ToLower().Trim();
+                        addToReport = string.IsNullOrWhiteSpace(professional) || lowerValue.Contains(professional) || professional.Contains(lowerValue);
+
+                        if (addToReport)
+                            report["title"] = reportCell.Value;
+                    }
+                    else if (addToReport) //mesma linha
+                    {
+                        report[headers[(int)((i % sectionColumnLastHeader) - 1)]] = reportCell.Value;
+                    }
+                }
+
+                i++;
+            }
+            return report;
+        }
+
         private void CalculateSectionPositions(IEnumerable<CellEntry> firstColumn, IDictionary<string, uint> positions,
-            Func<CellEntry, bool> checkIfEnterInSection, Func<CellEntry, bool> checkIfOutFromSection)
+                Func<CellEntry, bool> checkIfEnterInSection, Func<CellEntry, bool> checkIfOutFromSection)
         {
             var inSection = false;
 

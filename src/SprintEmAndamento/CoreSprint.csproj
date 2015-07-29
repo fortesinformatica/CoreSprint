@@ -94,6 +94,7 @@
     <Compile Include="Helpers\ITelegramHelper.cs" />
     <Compile Include="Helpers\SprintRunningHelper.cs" />
     <Compile Include="Helpers\TelegramHelper.cs" />
+    <Compile Include="Telegram\TelegramCommands\TelegramLate.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramCardInfo.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramCommand.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramCurrentSprintReport.cs" />
@@ -105,6 +106,7 @@
     <Compile Include="Models\CardWorkDto.cs" />
     <Compile Include="Spreadsheet\ISpreadsheetConnection.cs" />
     <Compile Include="Spreadsheet\ISpreadsheetFacade.cs" />
+    <Compile Include="Telegram\TelegramCommands\TelegramReceiveAlerts.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramWorkExtractUpdate.cs" />
     <Compile Include="Telegram\TelegramCommands\TelegramWorkingCard.cs" />
     <Compile Include="Telegram\TelegramConfiguration.cs" />

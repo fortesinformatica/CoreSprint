@@ -71,10 +71,12 @@ namespace CoreSprint.Telegram.TelegramCommands
                     {
                         startedWihoutStop.Add(cardWorkStarted);
                         cardWorkStarted = work;
-                    } else if (_commentHelper.HasStopPattern(work.Comment))
+                    }
+                    else if (_commentHelper.HasStopPattern(work.Comment))
                     {
                         cardWorkStarted = null;
-                    } else if (hasStartPattern)
+                    }
+                    else if (hasStartPattern)
                     {
                         cardWorkStarted = work;
                     }
