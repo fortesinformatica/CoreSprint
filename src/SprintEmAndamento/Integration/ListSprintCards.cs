@@ -19,7 +19,7 @@ namespace CoreSprint.Integration
         private readonly ISpreadsheetFacade _spreadsheetFacade;
         private readonly ICardHelper _cardHelper;
         private readonly IWorksheetHelper _worksheetHelper;
-        private ISprintRunningHelper _sprintRunningHelper;
+        private readonly ISprintRunningHelper _sprintRunningHelper;
 
         public ListSprintCards(ICoreSprintFactory coreSprintFactory, string trelloBoardId, string spreadsheetId)
         {

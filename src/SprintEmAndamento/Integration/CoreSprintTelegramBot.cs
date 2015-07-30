@@ -46,6 +46,7 @@ namespace CoreSprint.Integration
              card_working - Recupera qual cartão um ou mais profissionais estão trabalhando
              late - Identifica possíveis atrasos no sprint considerando a data atual e a data final do sprint
              receive_alerts - Registra um chat para receber notificações de alerta
+             reassessment - Recupera os cartões que sofreram reestimativa a partir de uma determinada data
              */
             return new List<ITelegramCommand>
             {
@@ -56,7 +57,8 @@ namespace CoreSprint.Integration
                 new TelegramCardInfo(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
                 new TelegramWorkingCard(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
                 new TelegramLate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
-                new TelegramReceiveAlerts(_telegramBot)
+                new TelegramReceiveAlerts(_telegramBot),
+                new TelegramReassessment(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)
             };
         }
 
@@ -68,32 +70,37 @@ namespace CoreSprint.Integration
 
         private void ExecuteProactiveCommands()
         {
-            ExecuteInNewThread(() =>
+            var strDateTime = File.Exists(CoreSprintApp.TelegramProactivePath) ? File.ReadAllText(CoreSprintApp.TelegramProactivePath) : "";
+            var dateTimeNow = DateTime.Now;
+            var inTime = (string.IsNullOrWhiteSpace(strDateTime) ||
+                          dateTimeNow >
+                          Convert.ToDateTime(strDateTime, new CultureInfo("pt-BR", false).DateTimeFormat)
+                              .AddHours(3))
+                         && dateTimeNow.Hour >= 7 && dateTimeNow.Hour <= 19;
+
+            if (inTime && File.Exists(CoreSprintApp.TelegramChatsPath))
             {
-                var strDateTime = File.Exists(CoreSprintApp.TelegramProactivePath) ? File.ReadAllText(CoreSprintApp.TelegramProactivePath) : "";
-                var dateTimeNow = DateTime.Now;
-                var inTime = (string.IsNullOrWhiteSpace(strDateTime) ||
-                              dateTimeNow >
-                              Convert.ToDateTime(strDateTime, new CultureInfo("pt-BR", false).DateTimeFormat)
-                                  .AddHours(4))
-                             && dateTimeNow.Hour >= 7 && dateTimeNow.Hour <= 19;
+                File.WriteAllText(CoreSprintApp.TelegramProactivePath, dateTimeNow.ToString("dd/MM/yyyy HH:mm:ss"));
 
-                if (inTime && File.Exists(CoreSprintApp.TelegramChatsPath))
+                var commands = GetProactiveCommands();
+                var chats = File.ReadAllLines(CoreSprintApp.TelegramChatsPath).Select(long.Parse);
+
+                foreach (var command in commands)
                 {
-                    File.WriteAllText(CoreSprintApp.TelegramProactivePath, dateTimeNow.ToString("dd/MM/yyyy HH:mm:ss"));
-
-                    var commands = GetProactiveCommands();
-                    var chats = File.ReadAllLines(CoreSprintApp.TelegramChatsPath).Select(long.Parse);
-                    commands.AsParallel().ForAll(command => command.Execute(chats));
+                    if (command is TelegramReassessment) //TODO: ver melhor forma de fazer esses tratamentos específicos dos comandos
+                        ExecuteInNewThread(() => command.Execute(chats, strDateTime));
+                    else
+                        ExecuteInNewThread(() => command.Execute(chats));
                 }
-            });
+            }
         }
 
         private List<ITelegramProactiveCommand> GetProactiveCommands()
         {
             return new List<ITelegramProactiveCommand>
             {
-                new TelegramLate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)
+                new TelegramLate(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId),
+                new TelegramReassessment(_telegramBot, _sprintFactory, CoreSprintApp.TrelloBoardId, CoreSprintApp.SpreadsheetId)
             };
         }
 

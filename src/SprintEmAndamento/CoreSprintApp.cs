@@ -11,7 +11,7 @@ namespace CoreSprint
         public static string TrelloBoardId = "x3EGx2MZ"; //TODO: tornar configurável
         public static string SpreadsheetId = "1iI6EG4sDnkGSPtuqs8NILoiad1QqzVPq8j-HAHjZxaQ"; //TODO: tornar configurável
 
-        public static string RootPathData = "c:\\temp\\CoreSprint\\";
+        public static string RootPathData = "c:\\CoreSprint\\";
         //TODO: substituir esquemas de arquivos por outras formas de persistência
         public static string SpreadsheetConfigPath => RootPathData + "spreadsheet.config";
         public static string TrelloConfigPath => RootPathData + "trello.config";
