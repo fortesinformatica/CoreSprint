@@ -71,11 +71,16 @@ namespace CoreSprint.Integration
             ExecuteInNewThread(() =>
             {
                 var strDateTime = File.Exists(CoreSprintApp.TelegramProactivePath) ? File.ReadAllText(CoreSprintApp.TelegramProactivePath) : "";
-                var inTime = string.IsNullOrWhiteSpace(strDateTime) || DateTime.Now > Convert.ToDateTime(strDateTime, new CultureInfo("pt-BR", false).DateTimeFormat).AddHours(4);
+                var dateTimeNow = DateTime.Now;
+                var inTime = (string.IsNullOrWhiteSpace(strDateTime) ||
+                              dateTimeNow >
+                              Convert.ToDateTime(strDateTime, new CultureInfo("pt-BR", false).DateTimeFormat)
+                                  .AddHours(4))
+                             && dateTimeNow.Hour >= 7 && dateTimeNow.Hour <= 7;
 
                 if (inTime && File.Exists(CoreSprintApp.TelegramChatsPath))
                 {
-                    File.WriteAllText(CoreSprintApp.TelegramProactivePath, DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
+                    File.WriteAllText(CoreSprintApp.TelegramProactivePath, dateTimeNow.ToString("dd/MM/yyyy HH:mm:ss"));
 
                     var commands = GetProactiveCommands();
                     var chats = File.ReadAllLines(CoreSprintApp.TelegramChatsPath).Select(long.Parse);
