@@ -76,7 +76,7 @@ namespace CoreSprint.Integration
                               dateTimeNow >
                               Convert.ToDateTime(strDateTime, new CultureInfo("pt-BR", false).DateTimeFormat)
                                   .AddHours(4))
-                             && dateTimeNow.Hour >= 7 && dateTimeNow.Hour <= 7;
+                             && dateTimeNow.Hour >= 7 && dateTimeNow.Hour <= 19;
 
                 if (inTime && File.Exists(CoreSprintApp.TelegramChatsPath))
                 {
