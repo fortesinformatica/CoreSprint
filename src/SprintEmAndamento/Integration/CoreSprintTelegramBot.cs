@@ -74,9 +74,8 @@ namespace CoreSprint.Integration
             var dateTimeNow = DateTime.Now;
             var inTime = (string.IsNullOrWhiteSpace(strDateTime) ||
                           dateTimeNow >
-                          Convert.ToDateTime(strDateTime, new CultureInfo("pt-BR", false).DateTimeFormat)
-                              .AddHours(3))
-                         && dateTimeNow.Hour >= 7 && dateTimeNow.Hour <= 19;
+                          Convert.ToDateTime(strDateTime, new CultureInfo("pt-BR", false).DateTimeFormat).AddHours(3))
+                         && dateTimeNow.Hour >= 7 && dateTimeNow.Hour <= 19 && dateTimeNow.DayOfWeek != DayOfWeek.Sunday;
 
             if (inTime && File.Exists(CoreSprintApp.TelegramChatsPath))
             {
