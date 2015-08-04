@@ -186,9 +186,8 @@ namespace CoreSprint.Helpers
 
                 if (matchWork && dateInComment >= startDate && dateInComment <= endDate)
                 {
-                    var pending = 0D;
-                    var worked = CalculateRunningWorked(comment, workedControl);
-                    worked += CalculateWorkedAndReminder(comment, _cultureInfoEnUs, ref pending);
+                    var worked = CalculateRunningWorked(comment, workedControl) +
+                                 CalculateWorked(comment, _cultureInfoEnUs);
 
                     extract.Add(new CardWorkDto
                     {
@@ -241,8 +240,12 @@ namespace CoreSprint.Helpers
 
             foreach (var comment in comments.Where(comment => validateComment == null || validateComment(comment)))
             {
-                worked += CalculateRunningWorked(comment, workedControl);
-                worked += CalculateWorkedAndReminder(comment, _cultureInfoEnUs, ref pending);
+                var pendingInComment = CalculatePending(comment, _cultureInfoEnUs);
+                var workedInComment = CalculateRunningWorked(comment, workedControl) +
+                                      CalculateWorked(comment, _cultureInfoEnUs);
+
+                worked += workedInComment;
+                pending = pendingInComment ?? pending - workedInComment;
             }
 
             pending = pending > 0 ? pending : 0;
@@ -250,25 +253,30 @@ namespace CoreSprint.Helpers
             return new Dictionary<string, double> { { "worked", worked }, { "pending", pending } };
         }
 
-        private double CalculateWorkedAndReminder(CommentCardAction comment, CultureInfo cultureInfo, ref double pending)
+        private double CalculateWorked(CommentCardAction comment, CultureInfo cultureInfo)
         {
             var worked = 0D;
             var matchesWorked = _workedPattern.Matches(comment.Data.Text);
-            var matchesPending = _pendingPattern.Matches(comment.Data.Text);
 
             foreach (Match match in matchesWorked)
             {
                 var matchNumber = _numberPattern.Match(match.Value);
                 var workedInComment = double.Parse(matchNumber.Value, cultureInfo);
                 worked += matchNumber.Success ? workedInComment : 0D;
-                pending -= matchesPending.Count > 0 ? 0D : workedInComment;
             }
+            return worked;
+        }
+
+        private double? CalculatePending(CommentCardAction comment, CultureInfo cultureInfo)
+        {
+            var matchesPending = _pendingPattern.Matches(comment.Data.Text);
+            var pending = (double?)null;
 
             foreach (var matchNumber in from Match match in matchesPending select _numberPattern.Match(match.Value))
             {
-                pending = matchNumber.Success ? double.Parse(matchNumber.Value, cultureInfo) : 0D;
+                pending = matchNumber.Success ? double.Parse(matchNumber.Value, cultureInfo) : pending;
             }
-            return worked;
+            return pending;
         }
 
         private double CalculateRunningWorked(CommentCardAction comment, IDictionary<string, DateTime> workedControl)
