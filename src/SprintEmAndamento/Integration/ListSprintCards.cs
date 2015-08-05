@@ -37,10 +37,10 @@ namespace CoreSprint.Integration
             const string worksheetName = "ListaDeCartoes";
             const string sprintWorksheetName = "SprintCorrente";
 
-            var spreadsheet = _spreadsheetFacade.GetSpreadsheet(_spreadsheetId);
-            var worksheet = _worksheetHelper.RedoWorksheet(spreadsheet, worksheetName, GetHeadersName());
-            var sprintWorksheet = _spreadsheetFacade.GetWorksheet(spreadsheet, sprintWorksheetName);
-            var sprintPeriod = _sprintRunningHelper.GetSprintPeriod(sprintWorksheet);
+            var spreadsheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetSpreadsheet(_spreadsheetId));
+            var worksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _worksheetHelper.RedoWorksheet(spreadsheet, worksheetName, GetHeadersName()));
+            var sprintWorksheet = ExecutionHelper.ExecuteAndRetryOnFail(() => _spreadsheetFacade.GetWorksheet(spreadsheet, sprintWorksheetName));
+            var sprintPeriod = ExecutionHelper.ExecuteAndRetryOnFail(() => _sprintRunningHelper.GetSprintPeriod(sprintWorksheet));
 
             CopyCardsToSpreadsheet(worksheet, sprintPeriod);
         }
