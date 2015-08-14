@@ -315,7 +315,7 @@ namespace CoreSprint.Helpers
             var dateInCommentX = _commentHelper.GetDateInComment(x);
             var dateInCommentY = _commentHelper.GetDateInComment(y);
 
-            return dateInCommentX > dateInCommentY ? 1 : -1;
+            return dateInCommentX.Equals(dateInCommentY) ? 0 : dateInCommentX > dateInCommentY ? 1 : -1;
         }
     }
 }
